@@ -1,5 +1,6 @@
 <template>
   <div class="login-page-bg">
+    <loading :active="isLoading"></loading>
     <div class="login-bg-2">
       <div class="login-board-container">
         <img src="../../static/imgs/login_logo.png">
@@ -49,73 +50,43 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
+import Loading from 'vue-loading-template'
+import Cookies from 'js-cookie'
 export default {
+  components: {
+    Loading
+  },
   data() {
     return {
-      keyValuePairs: [
-        {
-          name: '4dstc',
-          pw: '4dstc123',
-        },
-        {
-          name: 'innerUser_1',
-          pw: 'user_egn',
-        },
-        {
-          name: 'innerUser_2',
-          pw: 'user_pcm',
-        },
-        {
-          name: 'innerUser_3',
-          pw: 'user_mnzxy',
-        },
-        {
-          name: 'innerUser_4',
-          pw: 'user_nzw',
-        },
-        {
-          name: 'innerUser_5',
-          pw: 'user_.az',
-        },
-        {
-          name: 'innerUser_6',
-          pw: 'user_zqcd',
-        },
-      ]
+      isLoading: false
     }
   },
   methods: {
     login() {
+      this.isLoading = true
       let loginForm = {
         username: document.getElementById('username').value,
         password: document.getElementById('password').value
       }
       this.$store.dispatch('LoginByUsername', loginForm).then(() => {
+        Cookies.set('username', document.getElementById('username').value)
         this.$router.push({ path: '/models'})
       }).catch(reject => {
         console.log(reject)
       })
-      // let flag = 0
-      // this.keyValuePairs.forEach(eachPair => {
-      //   if(eachPair.name == name && eachPair.pw == pw) {
-      //     flag = 1
-      //   }
-      // })
-      // if(flag === 1) {
-      //   alert('Login successfully！')
-      //   this.$router.push('/models')
-      // }
-      // //if(name == '4dstc' && pw == '4dstc123') {
-      // //   alert('Login successfully！')
-      // //   this.$router.push('/models')
-      // // }
-      // else {
-      //   alert('Login failed！')
-      //   document.getElementById('username').value = ''
-      //   document.getElementById('password').value = ''
-      // }
     },
   },
+  computed: {
+    ...mapGetters([
+      'token',
+    ])
+  },
+  mounted() {
+    if(this.token) {
+      this.$router.push({ path: '/models'})
+    }
+  }
 }
 </script>
 

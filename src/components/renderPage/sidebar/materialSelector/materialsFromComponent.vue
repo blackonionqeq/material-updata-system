@@ -7,12 +7,12 @@
     </div> -->
     <!-- <div class="materials-content" :class="{ hidden: openFlag === 0 }"> -->
     <div class="materials-content">
-      <div v-for="(materialInfo, index) of material.Mlist" :key="index" @click="changeFur(materialInfo, material.componentName)">
-        <div class="tipIcon" style="position: relative;" @click.stop="sendShowFlag(materialInfo)">
-          <img style="position: absolute; right: 0; top: 20px;" src="@/../static/imgs/icons/icon_13.png">
+      <div v-for="(eachMaterial, index) of material" :key="index" @click="changeFur(eachMaterial)">
+        <div class="tipIcon" style="position: relative;" @click.stop="console.log(`click ${index}'s info.`)">
+          <img style="position: absolute; right: .5em; top: 1.25em;" src="@/../static/imgs/icons/icon_13.png">
         </div>
-        <img :src='materialInfo.imgUrl' :alt="materialInfo.imgUrl">
-        <div class="material-info">{{ materialInfo.furName }}</div>
+        <img :src='eachMaterial.curtailImg' :alt="eachMaterial.curtailImg">
+        <div class="material-info">{{ eachMaterial.materialNumber }}</div>
       </div>
     </div>
   </div>
@@ -28,24 +28,17 @@ export default {
     }
   },
   methods: {
-    openList() {
-      if(this.openFlag === 0) 
-        this.openFlag = 1
-      else 
-        this.openFlag = 0
-    },
-    changeFur(...materialInfo) {
-      // console.log({
-      //   componentName: materialInfo[1],
-      //   furID: materialInfo[0].furID
-      // })
-      let componentName = materialInfo[1]
-      let furID = materialInfo[0].furID
-      this.$store.dispatch('fillOutTargetMaterial', {componentName, furID})
+    changeFur(materialInfo) {
+      // console.log(materialInfo.renderArguments)
+      this.$store.dispatch('GetMaterialInfo', materialInfo)
+      this.$store.dispatch('reset_historyOperation')
+      // let componentName = materialInfo[1]
+      // let furID = materialInfo[0].furID
+      // this.$store.dispatch('fillOutTargetMaterial', {componentName, furID})
 
-      // Push the operation of change fur(include the information of fur and component)
-      let type = 'fur'
-      this.$store.dispatch('pushOperation', {componentName, furID, type})
+      // // Push the operation of change fur(include the information of fur and component)
+      // let type = 'fur'
+      // this.$store.dispatch('pushOperation', {componentName, furID, type})
     },
     sendShowFlag(material) {
       let furID = material.furID
@@ -74,6 +67,7 @@ export default {
   align-items: center;
 
   height: 2.2em;
+  // width: 80%;
 
   border-bottom: 2px solid #888;
   border-top: 2px solid #fff;
@@ -106,12 +100,12 @@ export default {
   }
   > div > img {
     margin-top: .8em;
-    width: 100px;
-    height: 100px;
+    width: 11em;
+    height: 11em;
   }
   .material-info {
+    text-align: center;
     height: 2.5em;
-    width: 100px;
 
     font-size: .8em;
     color: #999;

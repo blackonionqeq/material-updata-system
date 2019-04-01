@@ -1,22 +1,26 @@
 <template>
   <div class="renderer-container">
     <div>
-      <!-- <h1>This is content</h1> -->
       <div class="canvas-container">
+        <div class="component_selected-container">
+          <div class="component_selected">
+            {{ selectedObject }}
+          </div>
+        </div>
         <div id="canvas-frame" @dblclick="onClickShoe"></div>
         <div class="model-info-container" :class="{ hidden: iconShowFlag === 0 }">
           <!-- Tips of how to use -->
-          <img src="@/../static/imgs/icons/icon_18.png" @click="showOperationTips()">
+          <div>
+            <img src="@/../static/imgs/renderPage/上传.png">
+            <div>{{ uploadTime }}</div>
+          </div>
+          <div>
+            <img src="@/../static/imgs/renderPage/修改.png">
+            <div>{{ lastModifiedTime }}</div>
+          </div>
           <span></span>
-          <div>
-            <img src="@/../static/imgs/icons/icon_14.png">
-            <div>12/1/19</div>
-          </div>
-          <div>
-            <img src="@/../static/imgs/icons/icon_15.png">
-            <div>1/2/19</div>
-          </div>
-          <img src="@/../static/imgs/icons/icon_13.png" @click="showModelInfo()">
+          <img src="@/../static/imgs/renderPage/帮助@2x.png" @click="showOperationTips()">
+          <img src="@/../static/imgs/renderPage/信息@2x.png" @click="showModelInfo()">
         </div>
       </div>
     </div>
@@ -51,6 +55,17 @@ export default {
       gui: null,
       // Flag set on show or hide tips_icon
       iconShowFlag: 0,
+      changeableComponents: null,
+      composer: null,
+      effectFXAA: null,
+      outlinePass: null,
+      selectedObject: null,
+
+      // data info
+      uploadTime: '',
+      lastModifiedTime: '',
+      // A list, which record many object,which include { componentID, componentName, materialName, materialUrl, tile, color } to send to back end.
+      currentModelList: [],
     }
   },
   methods: {
@@ -288,8 +303,8 @@ export default {
           uniforms: uniforms,
           vertexShader: myPhongVertex,
           fragmentShader: myPhongFragment,
-          side: THREE.DoubleSide,
-          name: "TriPhong",
+          side: THREE.FrontSide,
+          //name: "TriPhong",
       });
       return material;
     },
@@ -300,7 +315,7 @@ export default {
     },
     initCamera(){
         let camera = new THREE.PerspectiveCamera( 30, this.windowWidth / this.windowHeight, 1, 2000 );
-        camera.position.set(0, 110, 800)
+        camera.position.set(0, 110, 500)
         this.camera = camera
     },
     initRender(){
@@ -342,15 +357,16 @@ export default {
         let dirLight = new THREE.DirectionalLight(0xFFFFFF, 0.421);
         dirLight.position.set(57, 133, 80);
         dirLight.castShadow = true;
-        dirLight.shadow.camera.top = 300;
-        dirLight.shadow.camera.bottom = -300;
-        dirLight.shadow.camera.left = -300;
-        dirLight.shadow.camera.right = 300;
+        dirLight.shadow.camera.top = 200; 
+        dirLight.shadow.camera.bottom = -200;
+        dirLight.shadow.camera.left = -200;
+        dirLight.shadow.camera.right = 200;
         dirLight.shadow.camera.far = 1000;
-        dirLight.shadow.bias = - 0.005;
-        let shadowSize = 2048;
-        dirLight.shadow.mapSize.width = shadowSize;
-        dirLight.shadow.mapSize.height = shadowSize;
+        dirLight.shadow.bias = - 0.0002;   
+        dirLight.shadow.radius = 9;
+
+        dirLight.shadow.mapSize.width = 4096;
+        dirLight.shadow.mapSize.height = 2048;
 
         let lightTarget = new THREE.Object3D();
         lightTarget.position.set(0, 0, 0);
@@ -359,21 +375,21 @@ export default {
         dirLight.target = lightTarget;
         this.scene.add(dirLight);
 
-            let lightTarget1 = new THREE.Object3D();
-            lightTarget1.position.set(-430, 1000, 230);
-            this.scene.add(lightTarget1);
-            let dirLight1 = new THREE.DirectionalLight(0x919191, 0.15);   //设置颜色和强度
-            dirLight1.position.set(0, -100, 100);
-            dirLight1.target = lightTarget1;   //平行光投射焦点
-            this.scene.add(dirLight1);
+        let lightTarget1 = new THREE.Object3D();
+        lightTarget1.position.set(-430, 1000, 230);
+        this.scene.add(lightTarget1);
+        let dirLight1 = new THREE.DirectionalLight(0x919191, 0.15);   //设置颜色和强度
+        dirLight1.position.set(0, -100, 100);
+        dirLight1.target = lightTarget1;   //平行光投射焦点
+        this.scene.add(dirLight1);
 
-        let potLight = new THREE.PointLight(0xFFFFFF, 0.10, 110, 0.54);
-        potLight.position.set(70, 54, 110);
-        this.scene.add(potLight);
+        // let potLight = new THREE.PointLight(0xFFFFFF, 0.10, 110, 0.54);
+        // potLight.position.set(70, 54, 110);
+        // this.scene.add(potLight);
 
-        potLight = new THREE.PointLight(0xFFFFFF, 0.1,150, 0.65);
-        potLight.position.set(-80, 38, 114);
-        this.scene.add(potLight);
+        // potLight = new THREE.PointLight(0xFFFFFF, 0.1,150, 0.65);
+        // potLight.position.set(-80, 38, 114);
+        // this.scene.add(potLight);
       
     },
     initModel(){
@@ -385,9 +401,34 @@ export default {
         this.scene.add( ground );
 
     },
+    initPostProcess() {
+      // postprocessing
+      this.composer = new THREE.EffectComposer(this.renderer); //create effect composer first
+
+      var renderPass = new THREE.RenderPass(this.scene, this.camera); //create a renderer(as webGLRenderer) render a new scene according to existing scene and camera
+      this.composer.addPass(renderPass);
+
+      //outline
+      this.outlinePass = new THREE.OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), this.scene, this.camera); //outline
+      this.composer.addPass(this.outlinePass);
+      this.outlinePass.usePatternTexture = false
+      this.outlinePass.edgeStrength = 2.5  
+      this.outlinePass.edgeGlow = 0.6
+      this.outlinePass.edgeThickness = 2.2
+      this.outlinePass.pulsePeriod = 3
+      this.outlinePass.visibleEdgeColor.set(0xffffff); 
+      this.outlinePass.hiddenEdgeColor.set(0x7c7c7c);  
+      var pixelRatio = this.renderer.getPixelRatio()
+
+      //anti-aliasing
+      this.effectFXAA = new THREE.ShaderPass(THREE.FXAAShader);
+      this.effectFXAA.uniforms['resolution'].value.set(1 / (window.innerWidth * pixelRatio), 1 / (window.innerHeight * pixelRatio));
+      this.effectFXAA.renderToScreen = true;
+      this.composer.addPass(this.effectFXAA);
+    },
       // var i=1
-    loadCTM(model, furID){
-        var URL = model.componentURL
+    loadCTM(model, material){
+        var URL = model.url
         var name = model.componentName
         var position = new THREE.Vector3( 0, -50, 0 );
         var scale = new THREE.Vector3( 1, 1, 1 );
@@ -397,7 +438,7 @@ export default {
 
         loader.load( URL , function ( geometry ) {
           try{
-            var meshMaterial = that.onChangeFur(name, furID)
+            var meshMaterial = that.onChangeFur(name, material)
           }
           catch(err){
             console.log('onChangeFur ERROR')
@@ -415,6 +456,17 @@ export default {
                 if (model.color != undefined) that.changeColor(mesh, model.color)
                 if (model.tile != undefined) that.changeTile(mesh, model.tile)
             that.group.add(mesh);
+            if (material.furName.search(/crystal/) != -1) {
+              meshMaterial.side = THREE.BackSide
+              var secondMesh = mesh.clone();
+              var secondMaterial = meshMaterial.clone()
+              secondMaterial.side = THREE.FrontSide
+              secondMaterial.opacity = meshMaterial.opacity - 0.2
+              secondMaterial.metalness = 0
+              secondMesh.material = secondMaterial          
+              that._data.scene.add(secondMesh)
+              that._data.group.add(secondMesh)
+            }
         })
         
     },
@@ -428,182 +480,188 @@ export default {
         texture.updateMatrix();
         return texture
     },
-    onChangeFur(componentName, furID){
-        this.closeGUI()
-        let materials = this.materialList
-        for(let i in materials){
-            if(materials[i].furID == furID){
-                var materialInput = materials[i]
+    onChangeFur(componentName, materialInput){
+      this.closeGUI()
+      if (materialInput.materialType == "basic") {
+        var material = new THREE.MeshBasicMaterial({
+          color: materialInput.color,
+          transparent: materialInput.transparent,
+          opacity: materialInput.opacity
+        })
+      }
+      if (materialInput.materialType == "lambert") {
+        var material = new THREE.MeshLambertMaterial({
+          color: materialInput.color,
+          emissive: materialInput.emissiveColor,
+          transparent: materialInput.transparent,
+          opacity: materialInput.opacity
+        })
+      }
+      if (materialInput.materialType == "phong") {
+        var material = new THREE.MeshPhongMaterial({
+          color: materialInput.color,
+          emissive: materialInput.emissiveColor,
+          specular: materialInput.specularColor,
+          shininess: materialInput.shininess,
+          transparent: materialInput.transparent,
+          opacity: materialInput.opacity,
+          side: THREE.FrontSide
+        })
+      }
+      if (materialInput.materialType == "standard") {
+        var material = new THREE.MeshStandardMaterial({
+            color: materialInput.color,
+            emissive: materialInput.emissiveColor,
+            metalness: materialInput.metalness,
+            roughness: materialInput.roughness,
+            opacity: materialInput.opacity,
+            transparent: materialInput.transparent,
+            premultipliedAlpha: materialInput.premultipliedAlpha,
+            side: THREE.FrontSide
+        })
+      }
+      if (materialInput.materialType == "triPhong") {
+        var material = new this.TriPhongMaterial()
+      }
+      let that = this
+      //load map
+      if (materialInput.materialType != "triPhong") {
+        if (materialInput.diffuseMap != undefined) {
+            var texture1 = this.loadTexture(materialInput.diffuseMap, materialInput.tileNum)
+            material.map = texture1
+        }
+        if (materialInput.specularMap != undefined) {
+            var texture2 = this.loadTexture(materialInput.specularMap, materialInput.tileNum)
+            material.specularMap = texture2
+        }
+        if (materialInput.normalMap != undefined) {
+            var texture3 = this.loadTexture(materialInput.normalMap, materialInput.tileNum)
+            material.normalMap = texture3
+        }
+        if (materialInput.envMap != undefined) {
+            if (materialInput.envMap.search(/hdrCubeMap/) == -1) {
+                var texture4 = this.loadTexture(materialInput.envMap, materialInput.tileNum)
+                texture4.mapping = THREE.SphericalReflectionMapping;
+                material.envMap = texture4
+            } else {
+              
+                var prefix = "https://sdtc-show.oss-cn-shenzhen.aliyuncs.com/fur/cubeMap/", postfix = ".hdr"
+                var hdrUrls = [
+                    prefix + 'px' + postfix, prefix + 'nx' + postfix,
+                    prefix + 'py' + postfix, prefix + 'ny' + postfix,
+                    prefix + 'pz' + postfix, prefix + 'nz' + postfix
+                ];
+                new THREE.HDRCubeTextureLoader().load(THREE.UnsignedByteType, hdrUrls, function (hdrCubeMap) {
+                    //extra pixel around each side to avoid cube map  seams
+                    
+                    var pmremGenerator = new THREE.PMREMGenerator(hdrCubeMap);
+                    pmremGenerator.update(that._data.renderer);
+                    var pmremCubeUVPacker = new THREE.PMREMCubeUVPacker(pmremGenerator.cubeLods);
+                    pmremCubeUVPacker.update(that._data.renderer);
+                    var hdrCubeRenderTarget = pmremCubeUVPacker.CubeUVRenderTarget;
+                    //set envMap
+                    material.envMap = hdrCubeRenderTarget.texture;
+                    material.envMapIntensity = 5
+                    material.needsUpdate = true;
+                    hdrCubeMap.dispose();
+                    pmremGenerator.dispose();
+                    pmremCubeUVPacker.dispose();
+                });
             }
+          }
         }
-        if (materialInput.materialType == "basic") {
-            var material = new THREE.MeshBasicMaterial({
-                color: materialInput.color,
-                transparent: materialInput.transparent,
-                opacity: materialInput.opacity
-            })
-        }
-        if (materialInput.materialType == "lambert") {
-            var material = new THREE.MeshLambertMaterial({
-                color: materialInput.color,
-                emissive: materialInput.emissiveColor,
-                transparent: materialInput.transparent,
-                opacity: materialInput.opacity
-            })
-        }
-        if (materialInput.materialType == "phong") {
-            var material = new THREE.MeshPhongMaterial({
-                color: materialInput.color,
-                emissive: materialInput.emissiveColor,
-                specular: materialInput.specularColor,
-                shininess: materialInput.shininess,
-                transparent: materialInput.transparent,
-                opacity: materialInput.opacity,
-                side: THREE.DoubleSide
-            })
-        }
-        if (materialInput.materialType == "standard") {
-            var material = new THREE.MeshStandardMaterial({
-                color: materialInput.color,
-                emissive: materialInput.emissiveColor,
-                metalness: materialInput.metalness,
-                roughness: materialInput.roughness,
-                opacity: materialInput.opacity,
-                transparent: materialInput.transparent,
-                premultipliedAlpha: materialInput.premultipliedAlpha,
-                side: THREE.DoubleSide
-            })
-        }
-        if (materialInput.materialType == "triPhong") {
-            var material = new this.TriPhongMaterial()
-        }
-        let that = this
-        //load map
-        if (materialInput.materialType != "triPhong") {
+      else {
+        var tex
+        if (materialInput.diffuseMap != undefined || materialInput.specularMap != undefined || materialInput.normalMap != undefined || materialInput.displacementMap != undefined) {
+            if (materialInput.tileNum == undefined) materialInput.tileNum = 1
+
+            if (materialInput.displacementMap != undefined) {
+                materialInput.textureType = "basic"
+                material.defines["USE_DISPLACEMENTMAP"] = "";
+                material.uniforms.displacementMap.value = this.loadTexture(materialInput.displacementMap, materialInput.tileNum);
+                material.uniforms.displacementScale.value = 1
+                material.uniforms.displacementBias.value = 0
+            }
+
+            switch (materialInput.textureType) {
+                case 'basic':
+                    material.defines["TRIPLANAR_THREEMAPS"] = false;
+                    material.defines["TRIPLANAR_BLEND"] = false;
+                    break;
+                case 'threeMaps':
+                    material.defines["TRIPLANAR_THREEMAPS"] = "";
+                    material.defines["TRIPLANAR_BLEND"] = false;
+                    break;
+                case 'blend':
+                    material.defines["TRIPLANAR_THREEMAPS"] = false;
+                    material.defines["TRIPLANAR_BLEND"] = "";
+                    break;
+            }
+
+            material.defines["USE_MAP"] = "";
+            var tex = this.loadTexture("https://sdtc-show.oss-cn-shenzhen.aliyuncs.com/fur/map.jpg", materialInput.tileNum)
+            material.uniforms.map.value = tex
+            material.uniforms.uvTransform.value = tex.matrix;
+
             if (materialInput.diffuseMap != undefined) {
-                var texture1 = this.loadTexture(materialInput.diffuseMap, materialInput.tileNum)
-                material.map = texture1
+                material.uniforms.map.value = this.loadTexture(materialInput.diffuseMap, materialInput.tileNum)
             }
             if (materialInput.specularMap != undefined) {
-                var texture2 = this.loadTexture(materialInput.specularMap, materialInput.tileNum)
-                material.specularMap = texture2
+                material.defines["USE_SPECULARMAP"] = "";
+                material.uniforms.specularMap.value  = this.loadTexture(materialInput.specularMap, materialInput.tileNum)
             }
             if (materialInput.normalMap != undefined) {
-                var texture3 = this.loadTexture(materialInput.normalMap, materialInput.tileNum)
-                material.normalMap = texture3
+                material.defines["USE_NORMALMAP"] = "";
+                material.uniforms.normalMap.value = this.loadTexture(materialInput.normalMap, materialInput.tileNum)
             }
-            if (materialInput.envMap != undefined) {
-                if (materialInput.envMap.search(/hdrCubeMap/) == -1) {
-                    var texture4 = this.loadTexture(materialInput.envMap, materialInput.tileNum)
-                    texture4.mapping = THREE.SphericalReflectionMapping;
-                    material.envMap = texture4
-                } else {
-                  
-                    var prefix = "../../static/cubeMap/", postfix = ".hdr"
-                    var hdrUrls = [
-                        prefix + 'px' + postfix, prefix + 'nx' + postfix,
-                        prefix + 'py' + postfix, prefix + 'ny' + postfix,
-                        prefix + 'pz' + postfix, prefix + 'nz' + postfix
-                    ];
-                    new THREE.HDRCubeTextureLoader().load(THREE.UnsignedByteType, hdrUrls, function (hdrCubeMap) {
-                        //extra pixel around each side to avoid cube map  seams
-                        
-                        var pmremGenerator = new THREE.PMREMGenerator(hdrCubeMap);
-                        pmremGenerator.update(that._data.renderer);
-                        var pmremCubeUVPacker = new THREE.PMREMCubeUVPacker(pmremGenerator.cubeLods);
-                        pmremCubeUVPacker.update(that._data.renderer);
-                        var hdrCubeRenderTarget = pmremCubeUVPacker.CubeUVRenderTarget;
-                        //set envMap
-                        material.envMap = hdrCubeRenderTarget.texture;
-                        material.envMapIntensity = 5
-                        material.needsUpdate = true;
-                        hdrCubeMap.dispose();
-                        pmremGenerator.dispose();
-                        pmremCubeUVPacker.dispose();
-                    });
-                }
-              }
+            if (materialInput.alphaMap != undefined) {
+                material.transparent = true
+                material.defines["USE_ALPHAMAP"] = "";
+                material.uniforms.alphaMap.value = this.loadTexture(materialInput.alphaMap , materialInput.tileNum);
             }
-        else {
-                var tex
-                if (materialInput.diffuseMap != undefined || materialInput.specularMap != undefined || materialInput.normalMap != undefined || materialInput.displacementMap != undefined) {
-                    if (materialInput.tileNum == undefined) materialInput.tileNum = 1
-
-                    if (materialInput.displacementMap != undefined) {
-                        materialInput.textureType = " basic"
-                        material.defines["USE_DISPLACEMENTMAP"] = "";
-                        material.uniforms.displacementMap.value = this.loadTexture(materialInput.displacementMap, materialInput.tileNum);
-                        material.uniforms.displacementScale.value = 1
-                        material.uniforms.displacementBias.value = 0
-                    }
-
-                    switch (materialInput.textureType) {
-                        case 'basic':
-                            material.defines["TRIPLANAR_THREEMAPS"] = false;
-                            material.defines["TRIPLANAR_BLEND"] = false;
-                            break;
-                        case 'threeMaps':
-                            material.defines["TRIPLANAR_THREEMAPS"] = "";
-                            material.defines["TRIPLANAR_BLEND"] = false;
-                            break;
-                        case 'blend':
-                            material.defines["TRIPLANAR_THREEMAPS"] = false;
-                            material.defines["TRIPLANAR_BLEND"] = "";
-                            break;
-                    }
-
-                    material.defines["USE_MAP"] = "";
-                    var tex = this.loadTexture("../../../static/fur/map.jpg", materialInput.tileNum)
-                    material.uniforms.map.value = tex
-                    material.uniforms.uvTransform.value = tex.matrix;
-
-                    if (materialInput.diffuseMap != undefined) {
-                        material.uniforms.map.value = this.loadTexture(materialInput.diffuseMap, materialInput.tileNum)
-                    }
-                    if (materialInput.specularMap != undefined) {
-                        material.defines["USE_SPECULARMAP"] = "";
-                        material.uniforms.specularMap.value  = this.loadTexture(materialInput.specularMap, materialInput.tileNum)
-                    }
-                    if (materialInput.normalMap != undefined) {
-                        material.defines["USE_NORMALMAP"] = "";
-                        material.uniforms.normalMap.value = this.loadTexture(materialInput.normalMap, materialInput.tileNum)
-                    }
-                    if (materialInput.alphaMap != undefined) {
-                        material.transparent = true
-                        material.defines["USE_ALPHAMAP"] = "";
-                        material.uniforms.alphaMap.value = this.loadTexture(materialInput.alphaMap , materialInput.tileNum);
-                    }
-                   
-                }
-                //enviromentMap
-                if (materialInput.envMap != undefined) {
-                    material.defines["USE_ENVMAP"] = "";
-                    material.uniforms.envMap.value = this.loadTexture(materialInput.envMap, materialInput.tileNum);
-                }
-
-                material.defines["USE_COLOR"] = "";
-                material.uniforms.specular.value = new THREE.Color(0xFFFFFF);
-                material.uniforms.diffuse.value = new THREE.Color(0xFFFFFF);
-                material.uniforms.shininess.value = 1
-                if (materialInput.shininess != undefined)
-                    material.uniforms.shininess.value = materialInput.shininess;
-                if (materialInput.color != undefined)
-                    material.uniforms.diffuse.value.setHex(materialInput.color);
-                if (materialInput.opacity != undefined) {
-                    material.transparent = true
-                    material.uniforms.opacity.value = materialInput.opacity;
-                }
-                material.uniforms.shadowSide = THREE.DoubleSide;
-                material.extensions.derivatives = true;
+            
         }
-        var object = this.scene.getObjectByName(componentName)
-        if (object) {
-            object.material = material
-            object.material.needsUpdate = true
+        //enviromentMap
+        if (materialInput.envMap != undefined) {
+            material.defines["USE_ENVMAP"] = "";
+            material.uniforms.envMap.value = this.loadTexture(materialInput.envMap, materialInput.tileNum);
         }
-        else {
-            return material
+
+        material.defines["USE_COLOR"] = "";
+        material.uniforms.specular.value = new THREE.Color(0xFFFFFF);
+        material.uniforms.diffuse.value = new THREE.Color(0xFFFFFF);
+        material.uniforms.shininess.value = 1
+        if (materialInput.shininess != undefined)
+            material.uniforms.shininess.value = materialInput.shininess;
+        if (materialInput.color != undefined)
+            material.uniforms.diffuse.value.setHex(materialInput.color);
+        if (materialInput.opacity != undefined) {
+            material.transparent = true
+            material.uniforms.opacity.value = materialInput.opacity;
         }
+        material.uniforms.shadowSide = THREE.DoubleSide;
+        material.extensions.derivatives = true;
+      }
+      var object = this.scene.getObjectByName(componentName)
+      material.name = materialInput.furID + '/' + materialInput.materialType
+      if (object) {
+          object.material = material
+          object.material.needsUpdate = true
+
+      }
+      else {
+          return material
+      }
+       
+    },
+    recordMaterialInfoToCurrentModelList(componentName, materialInfo) {
+      this.currentModelList.forEach(component => {
+        if(component.componentName === componentName) {
+          component.materialID = materialInfo.materialID
+          component.materialNumber = materialInfo.materialNumber
+          component.materialImg = materialInfo.curtailImg
+        }
+      })
     },
     onWindowResize() {
         this.camera.aspect = this.windowWidth / this.windowHeight;
@@ -614,28 +672,32 @@ export default {
         // insetHeight = window.innerHeight / 4;
 
     },
-    onChangeModel(model, materials) {
-        this.closeGUI()
-        //remove the children of the group previous.
-        var previous = this.scene.getObjectByName("previous")
-        for (let i = previous.children.length - 1; i >= 0; i--) {
-            let object = previous.children[i];
-            previous.remove(object);
-        }
-        // this.material = materials
-        for (let i in model) {
-            for (let j in materials) {
-                if (materials[j].furID == model[i].fur) {
-                    this.loadCTM(model[i], materials[j].furID)
-
-                }
-            }
-        }
-
+    onChangeModel(model) {
+      this.closeGUI()
+      //remove the children of the group previous.
+      var previous = this.scene.getObjectByName("previous")
+      for (let i = previous.children.length - 1; i >= 0; i--) {
+          let object = previous.children[i];
+          previous.remove(object);
+      }
+      let root = 'https://sdtc-show.oss-cn-shenzhen.aliyuncs.com/'
+      model.forEach(eachComponent => {
+        this.recordMaterialInfoToCurrentModelList(eachComponent.componentName, eachComponent.material)
+        let tmp = eval(`(${eachComponent.material.renderArguments})`)
+        Object.keys(tmp).forEach(eachTitle => {
+          let reg = RegExp(/Map/)
+          if(eachTitle.match(reg) && tmp[eachTitle]) {
+            tmp[eachTitle] = root + tmp[eachTitle]
+          }
+        })
+        // eachComponent.material.renderArguments = tmp
+        this.loadCTM(eachComponent, tmp)
+      })
+      this.$store.dispatch('SetCurrentModelList', this.currentModelList)
     },
     //改变颜色
     changeColor(target, value){
-        if (target.material.name == 'TriPhong') {
+        if (target.material.name.search(/triPhong/) != -1) {
             // target.material.uniforms.diffuse.value = new THREE.Color(value)
             target.material.uniforms.diffuse.value.setHex(value)
         } else {
@@ -646,19 +708,17 @@ export default {
     //改变平铺
     changeTile(target, value) {
         var dm, sm, nm, am
-        if (target.material.name == 'TriPhong') {
+        if (target.material.name.search(/triPhong/) != -1) {
             if (target.material.uniforms.map.value) dm = target.material.uniforms.map.value.repeat.x
             if (target.material.uniforms.specularMap.value) sm = target.material.uniforms.specularMap.value.repeat.x
             if (target.material.uniforms.normalMap.value) nm = target.material.uniforms.normalMap.value.repeat.x
             if (target.material.uniforms.alphaMap.value) am = target.material.uniforms.alphaMap.value.repeat.x
-            //console.log(dm + '\n' + sm + '\n' + nm + '\n' + am)
         }
         else {
             if (target.material.map) dm = target.material.map.repeat.x
             if (target.material.specularMap) sm = target.material.specularMap.repeat.x
             if (target.material.normalMap) nm = target.material.normalMap.repeat.x
             if (target.material.alphaMap) am = target.material.alphaMap.repeat.x
-            //console.log(dm + '\n' + sm + '\n' + nm + '\n' + am)
         }
         if (dm || sm || nm || am) {
             var tile, mat
@@ -666,7 +726,7 @@ export default {
             if (sm) tile = sm
             if (nm) tile = nm
             if (am) tile = am
-            if (target.material.name == 'TriPhong') {
+            if (target.material.name.search(/triPhong/) != -1) {
                 if (dm) {
                     target.material.uniforms.map.value.repeat.set(value, value)
                     target.material.uniforms.map.value.updateMatrix()
@@ -710,16 +770,31 @@ export default {
         }
     },
     animate() {
+        // let that = this
+        // requestAnimationFrame(that.animate);
+        // this.now = Date.now();
+        // this.elapsed = this.now - this.then;
+        // if (this.elapsed > this.fpsInterval) {
+        //     this.then = this.now - (this.elapsed % this.fpsInterval);
+        //     // this.stats.update()
+        //     that.renderer.render(this.scene, this.camera);
+        // }
         let that = this
         requestAnimationFrame(that.animate);
-        this.now = Date.now();
-        this.elapsed = this.now - this.then;
-        if (this.elapsed > this.fpsInterval) {
-            this.then = this.now - (this.elapsed % this.fpsInterval);
-            // this.stats.update()
-            that.renderer.render(this.scene, this.camera);
-        }
-        
+
+            this.now = Date.now();
+            this.elapsed = this.now - this.then;
+
+            if (this.elapsed > this.fpsInterval) {
+                this.then = this.now - (this.elapsed % this.fpsInterval);
+
+                if (this.composer) {
+                    this.composer.render()
+                } else {
+                    that.renderer.render(that.scene, that.camera);
+                }
+                this.group.updateMatrix()
+            }
     },
     onClickShoe(event) {
       let x = ((event.clientX - 32)/this.windowWidth)*2 - 1
@@ -729,152 +804,154 @@ export default {
       var ray = new THREE.Raycaster(this.camera.position, vector.sub(this.camera.position).normalize())
       var intersects = ray.intersectObjects(this.group.children)
       if(intersects.length > 0) {
-          console.log(intersects[0].object.name)
-          
-          if (this.gui != null) {
-              this.gui.destroy() //清除gui及其监听事件
-              this.gui = null
-          }
-          //console.log('1')
-          //console.log(this.gui)
-          this.gui = new dat.GUI(); //新建根UI
+        this.selectedObject = intersects[0].object.name
+        console.log(intersects[0].object.name)
+        
+        {
+          // if (this.gui != null) {
+          //     this.gui.destroy() //清除gui及其监听事件
+          //     this.gui = null
+          // }
+          // this.gui = new dat.GUI(); //新建根UI
 
-          //----获取UI的domElement改变格式，这里仅做示例---
-        //   this.gui.domElement.style.position = 'absolute'
-        //   this.container.appendChild(this.gui.domElement)
-          //使用网址https://github.com/dataarts/dat.gui
-          //--------------------------------------------------
-          var targetUI = document.getElementsByClassName('ac')[0]
-          targetUI.style.width = 200 + 'px'
-          targetUI.style.top = event.clientY + 'px'
-          targetUI.style.left = event.clientX + 100 + 'px'
-          console.log(targetUI)
+          // //点击获取部件时更新outline对象的目标列表
+          // if (this.outlinePass) {
+          //   var objectLists = []
+          //   objectLists.push(intersects[0].object)  //intersects[0].object为点击获取的对象
+          //   this.outlinePass.selectedObjects = objectLists  //selectedObjects为会显示轮廓的部件
+          // }
 
-          //以点击对象为target，但我们菜单一开始就出现，可以一开始就定taget为其中一个部件
-          var target = intersects[0].object  
-          if (target.material.name == 'TriPhong') {
-              var p = { color: "#" + target.material.uniforms.diffuse.value.getHexString() }
-            //   console.log(`color p is ${p}`)
-              let tmp = p.color.toString()
-              var col = this.gui.addColor(p, 'color').name("Color").listen(); //在根UI添加改变颜色的子菜单
-              let that = this
-              let type = 'color'
-              let componentName = target.name
-              col.onChange(function (value) { 
-                  target.material.uniforms.diffuse.value.setHex(value.replace("#", "0x"))
-              })
-              col.onFinishChange(function (value) { 
-                //   target.material.uniforms.diffuse.value.setHex(value.replace("#", "0x"))
-                that.$store.dispatch('judge_if_push_tmp_operation', componentName)
-                that.$store.dispatch('pushOperation', {tmp, componentName, type})
-                tmp = value
-                that.$store.dispatch('overwrite_tmp_operation', {tmp, componentName, type})
-              });
-          } else {
-              var p = { color: "#" + target.material.color.getHexString() }
-              let tmp = p.color.toString()
-              var col = this.gui.addColor(p, 'color').name("Color").listen();
-              let type = 'color'
-              let componentName = target.name
-            //   this.$store.dispatch('pushOperation', tmp)
-              let that = this
-              col.onChange(function (value) { 
-                target.material.color.setHex(value.replace("#", "0x"))
-              })
-              col.onFinishChange(function (value) { 
-                //   target.material.color.setHex(value.replace("#", "0x"))
-                that.$store.dispatch('judge_if_push_tmp_operation', componentName)
-                that.$store.dispatch('pushOperation', {tmp, componentName, type})
-                tmp = value
-                that.$store.dispatch('overwrite_tmp_operation', {tmp, componentName, type})
-              });
-          }
-        //改变目标部件材质贴图平铺数
-        var dm, sm, nm, am, tileUI
-        if (target.material.name == 'TriPhong') {
-            if (target.material.uniforms.map.value) dm = target.material.uniforms.map.value.repeat.x
-            if (target.material.uniforms.specularMap.value) sm = target.material.uniforms.specularMap.value.repeat.x
-            if (target.material.uniforms.normalMap.value) nm = target.material.uniforms.normalMap.value.repeat.x
-            if (target.material.uniforms.alphaMap.value) am = target.material.uniforms.alphaMap.value.repeat.x
-            //console.log(dm + '\n' + sm + '\n' + nm + '\n' + am)
+
+          // //----获取UI的domElement改变格式，这里仅做示例---
+          // //   this.gui.domElement.style.position = 'absolute'
+          // //   this.container.appendChild(this.gui.domElement)
+          // //使用网址https://github.com/dataarts/dat.gui
+          // //--------------------------------------------------
+          // var targetUI = document.getElementsByClassName('ac')[0]
+          // targetUI.style.width = 200 + 'px'
+          // targetUI.style.top = event.clientY + 'px'
+          // targetUI.style.left = event.clientX + 100 + 'px'
+
+          // //以点击对象为target，但我们菜单一开始就出现，可以一开始就定taget为其中一个部件
+          // var target = intersects[0].object  
+          // if (target.material.name.search(/triPhong/) != -1) {
+          //     var p = { color: "#" + target.material.uniforms.diffuse.value.getHexString() }
+          //     let tmp = p.color.toString()
+          //     var col = this.gui.addColor(p, 'color').name("Color").listen(); //在根UI添加改变颜色的子菜单
+          //     let that = this
+          //     let type = 'color'
+          //     let componentName = target.name
+          //     col.onChange(function (value) { 
+          //         target.material.uniforms.diffuse.value.setHex(value.replace("#", "0x"))
+          //     })
+          //     col.onFinishChange(function (value) { 
+          //       //   target.material.uniforms.diffuse.value.setHex(value.replace("#", "0x"))
+          //       that.$store.dispatch('judge_if_push_tmp_operation', componentName)
+          //       that.$store.dispatch('pushOperation', {tmp, componentName, type})
+          //       tmp = value
+          //       that.$store.dispatch('overwrite_tmp_operation', {tmp, componentName, type})
+          //     });
+          // } else {
+          //     var p = { color: "#" + target.material.color.getHexString() }
+          //     let tmp = p.color.toString()
+          //     var col = this.gui.addColor(p, 'color').name("Color").listen();
+          //     let type = 'color'
+          //     let componentName = target.name
+          //   //   this.$store.dispatch('pushOperation', tmp)
+          //     let that = this
+          //     col.onChange(function (value) { 
+          //       target.material.color.setHex(value.replace("#", "0x"))
+          //     })
+          //     col.onFinishChange(function (value) { 
+          //       //   target.material.color.setHex(value.replace("#", "0x"))
+          //       that.$store.dispatch('judge_if_push_tmp_operation', componentName)
+          //       that.$store.dispatch('pushOperation', {tmp, componentName, type})
+          //       tmp = value
+          //       that.$store.dispatch('overwrite_tmp_operation', {tmp, componentName, type})
+          //     });
+          // }
+          // //改变目标部件材质贴图平铺数
+          // var dm, sm, nm, am, tileUI
+          // if (target.material.name.search(/triPhong/) != -1) {
+          //     if (target.material.uniforms.map.value) dm = target.material.uniforms.map.value.repeat.x
+          //     if (target.material.uniforms.specularMap.value) sm = target.material.uniforms.specularMap.value.repeat.x
+          //     if (target.material.uniforms.normalMap.value) nm = target.material.uniforms.normalMap.value.repeat.x
+          //     if (target.material.uniforms.alphaMap.value) am = target.material.uniforms.alphaMap.value.repeat.x
+          // }
+          // else {
+          //     if (target.material.map) dm = target.material.map.repeat.x
+          //     if (target.material.specularMap) sm = target.material.specularMap.repeat.x
+          //     if (target.material.normalMap) nm = target.material.normalMap.repeat.x
+          //     if (target.material.alphaMap) am = target.material.alphaMap.repeat.x
+          // }
+          // if (dm || sm || nm || am) {
+          //     var tile, mat
+          //     if (dm) tile = dm
+          //     if (sm) tile = sm
+          //     if (nm) tile = nm
+          //     if (am) tile = am
+          //     var p = { tile: tile }
+          //     let tmp = p.tile.toString()
+          //     tileUI = this.gui.add(p, 'tile').min(0.01).max(50).step(0.01).name("tile").listen();
+          //     tileUI.onChange(function (value) {
+          //         if (target.material.name.search(/triPhong/) != -1) {
+          //             if (dm) {
+          //                 target.material.uniforms.map.value.repeat.set(value, value)
+          //                 target.material.uniforms.map.value.updateMatrix()
+          //                 mat = target.material.uniforms.map.value.matrix
+          //             }
+          //             if (sm) {
+          //                 target.material.uniforms.specularMap.value.repeat.set(value, value)
+          //                 target.material.uniforms.specularMap.value.updateMatrix()
+          //                 mat = target.material.uniforms.specularMap.value.matrix
+          //             }
+          //             if (nm) {
+          //                 target.material.uniforms.normalMap.value.repeat.set(value, value)
+          //                 target.material.uniforms.normalMap.value.updateMatrix()
+          //                 mat = target.material.uniforms.normalMap.value.matrix
+          //             }
+          //             if (am) {
+          //                 target.material.uniforms.alphaMap.value.repeat.set(value, value)
+          //                 target.material.uniforms.alphaMap.value.updateMatrix()
+          //                 mat = target.material.uniforms.alphaMap.value.matrix
+          //             }
+          //             target.material.uniforms.uvTransform.value = mat;
+          //         } else {
+          //             if (dm) {
+          //                 target.material.map.repeat.set(value, value)
+          //                 target.material.map.updateMatrix()
+          //             }
+          //             if (sm) {
+          //                 target.material.specularMap.repeat.set(value, value)
+          //                 target.material.specularMap.updateMatrix()
+          //             }
+          //             if (nm) {
+          //                 target.material.normalMap.repeat.set(value, value)
+          //                 target.material.normalMap.updateMatrix()
+          //             }
+          //             if (am) {
+          //                 target.material.alphaMap.repeat.set(value, value)
+          //                 target.material.alphaMap.updateMatrix()
+          //             }
+          //             target.material.needsUpdate = true
+          //         }
+          //     })
+          //     let type = 'tile'
+          //     let componentName = target.name
+          //     // let that = this
+          //     tileUI.onFinishChange(value => {
+          //       that.$store.dispatch('judge_if_push_tmp_operation', componentName)
+          //       this.$store.dispatch('pushOperation', {tmp, componentName, type})
+          //       tmp = value
+          //       this.$store.dispatch('overwrite_tmp_operation', {tmp, componentName, type})
+          //     })
+          // } 
         }
-        else {
-            if (target.material.map) dm = target.material.map.repeat.x
-            if (target.material.specularMap) sm = target.material.specularMap.repeat.x
-            if (target.material.normalMap) nm = target.material.normalMap.repeat.x
-            if (target.material.alphaMap) am = target.material.alphaMap.repeat.x
-            //console.log(dm + '\n' + sm + '\n' + nm + '\n' + am)
-        }
-        if (dm || sm || nm || am) {
-            var tile, mat
-            if (dm) tile = dm
-            if (sm) tile = sm
-            if (nm) tile = nm
-            if (am) tile = am
-            var p = { tile: tile }
-            let tmp = p.tile.toString()
-            // console.log('tile is ')
-            // console.log(p)
-            tileUI = this.gui.add(p, 'tile').min(0.01).max(50).step(0.01).name("tile").listen();
-            tileUI.onChange(function (value) {
-                if (target.material.name == 'TriPhong') {
-                    if (dm) {
-                        target.material.uniforms.map.value.repeat.set(value, value)
-                        target.material.uniforms.map.value.updateMatrix()
-                        mat = target.material.uniforms.map.value.matrix
-                    }
-                    if (sm) {
-                        target.material.uniforms.specularMap.value.repeat.set(value, value)
-                        target.material.uniforms.specularMap.value.updateMatrix()
-                        mat = target.material.uniforms.specularMap.value.matrix
-                    }
-                    if (nm) {
-                        target.material.uniforms.normalMap.value.repeat.set(value, value)
-                        target.material.uniforms.normalMap.value.updateMatrix()
-                        mat = target.material.uniforms.normalMap.value.matrix
-                    }
-                    if (am) {
-                        target.material.uniforms.alphaMap.value.repeat.set(value, value)
-                        target.material.uniforms.alphaMap.value.updateMatrix()
-                        mat = target.material.uniforms.alphaMap.value.matrix
-                    }
-                    target.material.uniforms.uvTransform.value = mat;
-                } else {
-                    if (dm) {
-                        target.material.map.repeat.set(value, value)
-                        target.material.map.updateMatrix()
-                    }
-                    if (sm) {
-                        target.material.specularMap.repeat.set(value, value)
-                        target.material.specularMap.updateMatrix()
-                    }
-                    if (nm) {
-                        target.material.normalMap.repeat.set(value, value)
-                        target.material.normalMap.updateMatrix()
-                    }
-                    if (am) {
-                        target.material.alphaMap.repeat.set(value, value)
-                        target.material.alphaMap.updateMatrix()
-                    }
-                    target.material.needsUpdate = true
-                }
-            })
-            let type = 'tile'
-            let componentName = target.name
-            // let that = this
-            tileUI.onFinishChange(value => {
-              that.$store.dispatch('judge_if_push_tmp_operation', componentName)
-              this.$store.dispatch('pushOperation', {tmp, componentName, type})
-              tmp = value
-              this.$store.dispatch('overwrite_tmp_operation', {tmp, componentName, type})
-            })
-        } 
       }
       else {
           
-          this.closeGUI()
-          //console.log('2')
-          //console.log(this.gui)
+          // this.closeGUI()
+
       }
     },
     clearThree(obj){ 
@@ -886,17 +963,134 @@ export default {
       if(obj.material) obj.material.dispose() 
       if(obj.texture) obj.texture.dispose() 
     },
-    async waitingRender() {
+    //清除目标部件，加载新部件
+    changeComponents(pres, news) {
+      var previous = this.scene.getObjectByName("previous")
+      var flag = true;
+      for (var i in pres) {
+        // Delete the old components in the currentModelList before delete them in canvas.
+        for(let j = 0; j < this.currentModelList.length; j++) {
+          if(this.currentModelList[j].componentName === pres[i].componentName) {
+            this.currentModelList.splice(j, 1)
+          }
+        }
+        let object = this.scene.getObjectByName(pres[i].componentName);
+        if (!object) flag = false;
+        previous.remove(object);
+      }
+      if (!flag) return;
+      let root = 'https://sdtc-show.oss-cn-shenzhen.aliyuncs.com/'
+      for(let i in news) {
+        // Add the new components to the current MdoelLsit before add them to canvas.
+        this.currentModelList.push({
+          componentName: news[i].componentName,
+          componentID: news[i].componentID
+        })
+        this.recordMaterialInfoToCurrentModelList(news[i].componentName, news[i].material)
+        this.$store.dispatch('SetCurrentModelList', this.currentModelList)
+        let tmp = eval(`(${news[i].material.renderArguments})`)
+        Object.keys(tmp).forEach(eachTitle => {
+          let reg = RegExp(/Map/)
+          if(eachTitle.match(reg) && tmp[eachTitle]) {
+            tmp[eachTitle] = root + tmp[eachTitle]
+          }
+        })
+        this.loadCTM(news[i], tmp)
+      }
+    },
+    writeDownChangeableComponent(model) {
+      let tmp = []
+      // Formate like this: [ { layerName: xxx, list: [ componentID: xxx...] }, { layerName: xxx, list: [ componentID: xxx...] } ]  
+      for(let j = 0; j < model.length; j++) {
+        if(model[j].layer !== 'static') {
+          let i
+          for(i = 0; i < tmp.length; i++) {
+            if(tmp[i].layerName === model[j].layer) {
+              tmp[i].list.push(model[j])
+              break
+            }
+          }
+          if(i >= tmp.length) {
+            tmp.push({
+              layerName: model[j].layer,
+              list: [ model[j] ]
+            })
+          }
+        }
+      }
+      this.changeableComponents = tmp
+    },
+    recordIDAndComponentName(components) {
+      let tmp = []
+      components.forEach(eachComponent => {
+        tmp.push({
+          componentID: eachComponent.componentID,
+          componentName: eachComponent.componentName,
+        })
+      })
+      this.currentModelList = tmp
+    },
+    waitingRender() {
       let model = this.selectedModel
-      let materials = this.materialList
+      // let materials = this.materialList
       this.model = model
-      this.onChangeModel(model, materials)
+      // Record components changeable.
+      this.writeDownChangeableComponent(model)
+      // Record components's id and component name (to show the selected materials at the sidebar).
+      this.recordIDAndComponentName(model)
+      this.onChangeModel(model)
+    },
+    outputDatas() {
+      var previous = this.scene.getObjectByName("previous")
+      var result = []
+      for (var i = previous.children.length - 1; i >= 0; i--) {
+        let object = previous.children[i];
+
+        //获取模型材质的平铺数和颜色
+        var tile,dm, sm, nm, am, col
+        if (object.material.name.search(/triPhong/) != -1) {
+            if (object.material.uniforms.map.value) dm = object.material.uniforms.map.value.repeat.x
+            if (object.material.uniforms.specularMap.value) sm = object.material.uniforms.specularMap.value.repeat.x
+            if (object.material.uniforms.normalMap.value) nm = object.material.uniforms.normalMap.value.repeat.x
+            if (object.material.uniforms.alphaMap.value) am = object.material.uniforms.alphaMap.value.repeat.x
+            col = object.material.uniforms.diffuse.value
+        }
+        else {
+            if (object.material.map) dm = object.material.map.repeat.x
+            if (object.material.specularMap) sm = object.material.specularMap.repeat.x
+            if (object.material.normalMap) nm = object.material.normalMap.repeat.x
+            if (object.material.alphaMap) am = object.material.alphaMap.repeat.x
+            col = object.material.color
+        }
+        if (dm || sm || nm || am) {
+            if (dm) tile = dm
+            if (sm) tile = sm
+            if (nm) tile = nm
+            if (am) tile = am
+        }
+
+        result.push({
+          componentName: object.name,
+          materialID: (object.material.name.split('/'))[0],
+          color: `0x${col.getHexString()}`,
+          tile: tile,
+        })
+
+        // result.push(object.name + ':' +     //部件名字
+        //     (object.material.name.split('/'))[0] + ',' +     //材质ID
+        //     '0x' + col.getHexString() + ',' +     //部件颜色
+        //     tile     //部件平铺数
+        // )
+      }
+      return result
     },
     closeGUI() {
       if (this.gui != null) {
         this.gui.destroy()
         this.gui = null
       }
+      //取消显示轮廓
+      if (this.outlinePass) this.outlinePass.selectedObjects = []
     },
   },
   computed: {
@@ -909,19 +1103,71 @@ export default {
       'goBackFlag',
       'targetOperation',
       'closeGUIFlag',
+      'componentInfo',
+      'materialInfo2',
+      'modelInfo',
+      'saveFlag',
+      // 'currentModelList',
     ])
   },
   watch: {
-    async selectedModelID(id) {
-      this.pointer = id
-      await this.waitingRender()
-      this.iconShowFlag = 1
+    saveFlag(newFlag) {
+      if(!newFlag) return
+      // this.camera.aspect = this.windowWidth / this.windowHeight
+      // this.camera.updateProjectionMatrix();
+      // this.renderer.setSize(this.windowWidth, this.windowHeight)
+      // this.renderer.render(this.scene, this.camera)
+      // console.log(this.renderer.domElement.toDataURL("image/jpeg"))
+      let result = this.outputDatas()
+      console.log(result)
+      this.$store.dispatch('GetColorsAndTiles', result)
+      this.$store.dispatch('ResetSaveFlag')
     },
-    targetFurID(newID) {
-      this.onChangeFur(this.targetComponent, newID)
+    modelInfo(newInfo) {
+      this.uploadTime = newInfo.uploadTime.substring(0,10)
+      this.lastModifiedTime = newInfo.lastTime.substring(0,10)
+    },
+    selectedModelID(id) {
+      this.selectedObject = null
+      this.waitingRender()
+      this.iconShowFlag = 1
+    }, 
+    componentInfo(newInfo) {
+      let c = this.changeableComponents
+      for(let i in c) {
+        if(c[i].layerName === newInfo.layer) {
+          this.changeComponents(c[i].list,  newInfo.foreComponents)
+          c[i].list = newInfo.foreComponents
+        }
+      }
+    },
+    materialInfo2(newInfo) {
+      if(!this.selectedObject) {
+        alert('Please double click a component.')
+        return
+      }
+      else {
+        // Parse the string to object.
+        let root = 'https://sdtc-show.oss-cn-shenzhen.aliyuncs.com/'
+        let tmp = eval(`(${newInfo.renderArguments})`)
+        // Record the new material, overwrite the list.
+        let targetToChangeMaterial = {
+          componentName: this.selectedObject,
+          materialID: newInfo.materialID,
+          materialNumber: newInfo.materialNumber,
+          materialImg: newInfo.curtailImg
+        }
+        this.$store.dispatch('SetTmpObject', targetToChangeMaterial)
+        Object.keys(tmp).forEach(eachTitle => { 
+          let reg = RegExp(/Map/)
+          if(eachTitle.match(reg) && tmp[eachTitle]) {
+            tmp[eachTitle] = root + tmp[eachTitle]
+          }
+        })
+        this.onChangeFur(this.selectedObject, tmp)
+      }
     },
     goBackFlag(newVal) {
-      console.log('InRenderer')
       if(newVal == 1) {
         this.closeGUI()
       }
@@ -931,10 +1177,6 @@ export default {
       if(newOp.type == 'color') {
         let target = this.scene.getObjectByName(newOp.componentName)
         let color = newOp.tmp.replace('#','0x')
-        // console.log('target is ')
-        // console.log(target)
-        // console.log('color is ')
-        // console.log(color)
         this.changeColor(target, color)
       }
       else if(newOp.type == 'tile') {
@@ -967,13 +1209,25 @@ export default {
         this.initModel()
         this.initLight()
         this.initRender()
+        this.initPostProcess()
         this.animate()
 
         // this.initUI()
-        // console.log(this.$route.query.id)
         let id = parseInt(this.$route.query.id)
-        this.$store.dispatch('getModelInfo', id)
-        this.$store.dispatch('setModelInfo', id)
+        // this.$store.dispatch('getModelInfo', id)
+        // this.$store.dispatch('setModelInfo', id)
+
+        this.$store.dispatch('GetModelsInfoFromBackEnd', id).then(res => {
+          console.log(res)
+        }).catch(err => {
+          console.log(err)
+        })
+        this.$store.dispatch('GetInfoOfAModel' ,id).then(res => {
+          console.log(res)
+        }).catch(err => {
+          console.log(err)
+          alert('The server have some wrong.')
+        })
   },
   beforeDestroy() {
     this.clearThree(this.scene)
@@ -1001,6 +1255,16 @@ export default {
   height: calc(100vh - 8em);
 
   border-radius: 1em;
+  .component_selected-container {
+    position: relative;
+    .component_selected {
+      position: absolute;
+      color: #999;
+      top: 2em;
+      left: 50%;
+      font-size: 1.5em;
+    }
+  }
 }
 #canvas-frame {
   height: 95%;
@@ -1018,24 +1282,26 @@ export default {
   align-items: center;
 
   position: relative;
-  bottom: 2.5em;
+  bottom: 3em;
 
   background: transparent;
 
   > div {
     display: flex;
-    margin-left: 1em;
+    margin-left: 2em;
     > div {
+      line-height: 1.35em;
       margin-left: .5em;
 
-      font-size: .9em;
-      color: #999;
+      font-size: 1.125em;
+      color: #bbb;
+      margin-right: 2em;
     }
   }
 
   > img {
     margin-left: 1em;
-    margin-right: 1em;
+    margin-right: 1.5em;
     cursor: pointer;
   }
 

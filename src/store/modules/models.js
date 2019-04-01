@@ -1,4 +1,11 @@
-import { getPrivateModels } from '@/api/modelPage'
+import { 
+  getPrivateModels,
+  getModelsBySearch,
+  getModelsSeriesAndSeasons,
+} from '@/api/modelPage'
+import {
+  updataTagOfModel,
+} from '@/api/others'
 
 const model = {
   state: {
@@ -10,20 +17,67 @@ const model = {
     },
   },
   actions: {
-    GetPrivateModels({ commit }) {
+    GetPrivateModels2ModelPage({ commit }) {
       return new Promise((resolve, reject) => {
         getPrivateModels().then(response => {
           const data = response.data
           console.log(data)
           if(data.code == 200) {
-            resolve()
+            resolve(data.value)
           }
-          reject(data)
+          else
+            reject(data)
         }).catch(error => {
           reject(error)
         })
       })
-    }
+    },
+    GetModelsBySearch({},keyword) {
+      console.log(keyword)
+      return new Promise((resolve, reject) => {
+        getModelsBySearch(keyword).then(response => {
+          const data = response.data
+          console.log(data)
+          if(data.code == 200) {
+            resolve(data.value)
+          }
+          else
+            reject(data)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    },
+    GetModelsSeriesAndSeasons({}) {
+      return new Promise((resolve, reject) => {
+        getModelsSeriesAndSeasons().then(res => {
+          const data = res.data
+          console.log(data)
+          if(data.code == 200) {
+            resolve(data.value)
+          }
+          else
+            reject(data)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    UpdataTagOfModel({}, {shoeID, tag}) {
+      return new Promise((resolve, reject) => {
+        updataTagOfModel(shoeID, tag).then(response => {
+          const data = response.data
+          console.log(data)
+          if(data.code == 200) {
+            resolve(data.value)
+          }
+          else
+            reject(data)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    },
   }
 }
 

@@ -6,3 +6,20 @@ export function getPrivateModels() {
     method: 'get',
   })
 }
+
+export function getModelsBySearch(keyword) {
+  return request({
+    url: '/private/model/searchShoes',
+    method: 'post',
+    params: {
+      keyword
+    }
+  })
+}
+
+export function getModelsSeriesAndSeasons() {
+  return request({
+    url: '/private/model/mySeriesAndSeason',
+    method: 'get',
+  })
+}

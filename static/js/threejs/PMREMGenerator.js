@@ -11,59 +11,59 @@
  *	by this class.
  */
 
-THREE.PMREMGenerator = ( function () {
+THREE.PMREMGenerator = (function () {
 
-	var shader = getShader();
-	var camera = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0.0, 1000 );
-	var scene = new THREE.Scene();
-	var planeMesh = new THREE.Mesh( new THREE.PlaneBufferGeometry( 2, 2, 0 ), shader );
-	planeMesh.material.side = THREE.DoubleSide;
-	scene.add( planeMesh );
-	scene.add( camera );
+    var shader = getShader();
+    var camera = new THREE.OrthographicCamera(- 1, 1, 1, - 1, 0.0, 1000);
+    var scene = new THREE.Scene();
+    var planeMesh = new THREE.Mesh(new THREE.PlaneBufferGeometry(2, 2, 0), shader);
+    planeMesh.material.side = THREE.DoubleSide;
+    scene.add(planeMesh);
+    scene.add(camera);
 
-	var PMREMGenerator = function ( sourceTexture, samplesPerLevel, resolution ) {
+    var PMREMGenerator = function (sourceTexture, samplesPerLevel, resolution) {
 
-		this.sourceTexture = sourceTexture;
-		this.resolution = ( resolution !== undefined ) ? resolution : 256; // NODE: 256 is currently hard coded in the glsl code for performance reasons
-		this.samplesPerLevel = ( samplesPerLevel !== undefined ) ? samplesPerLevel : 32;
+        this.sourceTexture = sourceTexture;
+        this.resolution = (resolution !== undefined) ? resolution : 256; // NODE: 256 is currently hard coded in the glsl code for performance reasons
+        this.samplesPerLevel = (samplesPerLevel !== undefined) ? samplesPerLevel : 32;
 
-		var monotonicEncoding = ( this.sourceTexture.encoding === THREE.LinearEncoding ) ||
-			( this.sourceTexture.encoding === THREE.GammaEncoding ) || ( this.sourceTexture.encoding === THREE.sRGBEncoding );
+        var monotonicEncoding = (this.sourceTexture.encoding === THREE.LinearEncoding) ||
+            (this.sourceTexture.encoding === THREE.GammaEncoding) || (this.sourceTexture.encoding === THREE.sRGBEncoding);
 
-		this.sourceTexture.minFilter = ( monotonicEncoding ) ? THREE.LinearFilter : THREE.NearestFilter;
-		this.sourceTexture.magFilter = ( monotonicEncoding ) ? THREE.LinearFilter : THREE.NearestFilter;
-		this.sourceTexture.generateMipmaps = this.sourceTexture.generateMipmaps && monotonicEncoding;
+        this.sourceTexture.minFilter = (monotonicEncoding) ? THREE.LinearFilter : THREE.NearestFilter;
+        this.sourceTexture.magFilter = (monotonicEncoding) ? THREE.LinearFilter : THREE.NearestFilter;
+        this.sourceTexture.generateMipmaps = this.sourceTexture.generateMipmaps && monotonicEncoding;
 
-		this.cubeLods = [];
+        this.cubeLods = [];
 
-		var size = this.resolution;
-		var params = {
-			format: this.sourceTexture.format,
-			magFilter: this.sourceTexture.magFilter,
-			minFilter: this.sourceTexture.minFilter,
-			type: this.sourceTexture.type,
-			generateMipmaps: this.sourceTexture.generateMipmaps,
-			anisotropy: this.sourceTexture.anisotropy,
-			encoding: this.sourceTexture.encoding
-		};
+        var size = this.resolution;
+        var params = {
+            format: this.sourceTexture.format,
+            magFilter: this.sourceTexture.magFilter,
+            minFilter: this.sourceTexture.minFilter,
+            type: this.sourceTexture.type,
+            generateMipmaps: this.sourceTexture.generateMipmaps,
+            anisotropy: this.sourceTexture.anisotropy,
+            encoding: this.sourceTexture.encoding
+        };
 
-		// how many LODs fit in the given CubeUV Texture.
-		this.numLods = Math.log( size ) / Math.log( 2 ) - 2; // IE11 doesn't support Math.log2
+        // how many LODs fit in the given CubeUV Texture.
+        this.numLods = Math.log(size) / Math.log(2) - 2; // IE11 doesn't support Math.log2
 
-		for ( var i = 0; i < this.numLods; i ++ ) {
+        for (var i = 0; i < this.numLods; i++) {
 
-			var renderTarget = new THREE.WebGLRenderTargetCube( size, size, params );
-			renderTarget.texture.name = "PMREMGenerator.cube" + i;
-			this.cubeLods.push( renderTarget );
-			size = Math.max( 16, size / 2 );
+            var renderTarget = new THREE.WebGLRenderTargetCube(size, size, params);
+            renderTarget.texture.name = "PMREMGenerator.cube" + i;
+            this.cubeLods.push(renderTarget);
+            size = Math.max(16, size / 2);
 
-		}
+        }
 
-	};
+    };
 
-	PMREMGenerator.prototype = {
+    PMREMGenerator.prototype = {
 
-		constructor: PMREMGenerator,
+        constructor: PMREMGenerator,
 
 		/*
 		 * Prashant Sharma / spidersharma03: More thought and work is needed here.
@@ -78,106 +78,107 @@ THREE.PMREMGenerator = ( function () {
 		 * This method requires the most amount of thinking I guess. Here is a paper which we could try to implement in future::
 		 * https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch20.html
 		 */
-		update: function ( renderer ) {
+        update: function (renderer) {
 
-			// Texture should only be flipped for CubeTexture, not for
-			// a Texture created via THREE.WebGLRenderTargetCube.
-			var tFlip = ( this.sourceTexture.isCubeTexture ) ? - 1 : 1;
+            // Texture should only be flipped for CubeTexture, not for
+            // a Texture created via THREE.WebGLRenderTargetCube.
+            var tFlip = (this.sourceTexture.isCubeTexture) ? - 1 : 1;
 
-			shader.defines[ 'SAMPLES_PER_LEVEL' ] = this.samplesPerLevel;
-			shader.uniforms[ 'faceIndex' ].value = 0;
-			shader.uniforms[ 'envMap' ].value = this.sourceTexture;
-			shader.envMap = this.sourceTexture;
-			shader.needsUpdate = true;
+            shader.defines['SAMPLES_PER_LEVEL'] = this.samplesPerLevel;
+            shader.uniforms['faceIndex'].value = 0;
+            shader.uniforms['envMap'].value = this.sourceTexture;
+            shader.envMap = this.sourceTexture;
+            shader.needsUpdate = true;
 
-			var gammaInput = renderer.gammaInput;
-			var gammaOutput = renderer.gammaOutput;
-			var toneMapping = renderer.toneMapping;
-			var toneMappingExposure = renderer.toneMappingExposure;
-			var currentRenderTarget = renderer.getRenderTarget();
+            var gammaInput = renderer.gammaInput;
+            var gammaOutput = renderer.gammaOutput;
+            var toneMapping = renderer.toneMapping;
+            var toneMappingExposure = renderer.toneMappingExposure;
+            var currentRenderTarget = renderer.getRenderTarget();
 
-			renderer.toneMapping = THREE.LinearToneMapping;
-			renderer.toneMappingExposure = 1.0;
-			renderer.gammaInput = false;
-			renderer.gammaOutput = false;
+            renderer.toneMapping = THREE.LinearToneMapping;
+            renderer.toneMappingExposure = 1.0;
+            renderer.gammaInput = false;
+            renderer.gammaOutput = false;
 
-			for ( var i = 0; i < this.numLods; i ++ ) {
+            for (var i = 0; i < this.numLods; i++) {
 
-				var r = i / ( this.numLods - 1 );
-				shader.uniforms[ 'roughness' ].value = r * 0.9; // see comment above, pragmatic choice
-				// Only apply the tFlip for the first LOD
-				shader.uniforms[ 'tFlip' ].value = ( i == 0 ) ? tFlip : 1;
-				var size = this.cubeLods[ i ].width;
-				shader.uniforms[ 'mapSize' ].value = size;
-				this.renderToCubeMapTarget( renderer, this.cubeLods[ i ] );
+                var r = i / (this.numLods - 1);
+                shader.uniforms['roughness'].value = r * 0.9; // see comment above, pragmatic choice
+                // Only apply the tFlip for the first LOD
+                shader.uniforms['tFlip'].value = (i == 0) ? tFlip : 1;
+                var size = this.cubeLods[i].width;
+                shader.uniforms['mapSize'].value = size;
+                this.renderToCubeMapTarget(renderer, this.cubeLods[i]);
 
-				if ( i < 5 ) shader.uniforms[ 'envMap' ].value = this.cubeLods[ i ].texture;
+                if (i < 5) shader.uniforms['envMap'].value = this.cubeLods[i].texture;
 
-			}
+            }
 
-			renderer.setRenderTarget( currentRenderTarget );
-			renderer.toneMapping = toneMapping;
-			renderer.toneMappingExposure = toneMappingExposure;
-			renderer.gammaInput = gammaInput;
-			renderer.gammaOutput = gammaOutput;
+            renderer.setRenderTarget(currentRenderTarget);
+            renderer.toneMapping = toneMapping;
+            renderer.toneMappingExposure = toneMappingExposure;
+            renderer.gammaInput = gammaInput;
+            renderer.gammaOutput = gammaOutput;
 
-		},
+        },
 
-		renderToCubeMapTarget: function ( renderer, renderTarget ) {
+        renderToCubeMapTarget: function (renderer, renderTarget) {
 
-			for ( var i = 0; i < 6; i ++ ) {
+            for (var i = 0; i < 6; i++) {
 
-				this.renderToCubeMapTargetFace( renderer, renderTarget, i );
+                this.renderToCubeMapTargetFace(renderer, renderTarget, i);
 
-			}
+            }
 
-		},
+        },
 
-		renderToCubeMapTargetFace: function ( renderer, renderTarget, faceIndex ) {
+        renderToCubeMapTargetFace: function (renderer, renderTarget, faceIndex) {
 
-			renderTarget.activeCubeFace = faceIndex;
-			shader.uniforms[ 'faceIndex' ].value = faceIndex;
-			renderer.render( scene, camera, renderTarget, true );
+            shader.uniforms['faceIndex'].value = faceIndex;
+            renderer.setRenderTarget(renderTarget, faceIndex);
+            renderer.clear();
+            renderer.render(scene, camera);
 
-		},
+        },
 
-		dispose: function () {
+        dispose: function () {
 
-			for ( var i = 0, l = this.cubeLods.length; i < l; i ++ ) {
+            for (var i = 0, l = this.cubeLods.length; i < l; i++) {
 
-				this.cubeLods[ i ].dispose();
+                this.cubeLods[i].dispose();
 
-			}
+            }
 
-		},
+        },
 
-	};
+    };
 
-	function getShader() {
+    function getShader() {
 
-		var shaderMaterial = new THREE.ShaderMaterial( {
+        var shaderMaterial = new THREE.ShaderMaterial({
 
-			defines: {
-				"SAMPLES_PER_LEVEL": 20,
-			},
+            defines: {
+                "SAMPLES_PER_LEVEL": 20,
+            },
 
-			uniforms: {
-				"faceIndex": { value: 0 },
-				"roughness": { value: 0.5 },
-				"mapSize": { value: 0.5 },
-				"envMap": { value: null },
-				"tFlip": { value: - 1 },
-			},
+            uniforms: {
+                "faceIndex": { value: 0 },
+                "roughness": { value: 0.5 },
+                "mapSize": { value: 0.5 },
+                "envMap": { value: null },
+                "tFlip": { value: - 1 },
+            },
 
-			vertexShader:
-				"varying vec2 vUv;\n\
+            vertexShader:
+                "varying vec2 vUv;\n\
 				void main() {\n\
 					vUv = uv;\n\
 					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\
 				}",
 
-			fragmentShader:
-				"#include <common>\n\
+            fragmentShader:
+                "#include <common>\n\
 				varying vec2 vUv;\n\
 				uniform int faceIndex;\n\
 				uniform float roughness;\n\
@@ -275,16 +276,16 @@ THREE.PMREMGenerator = ( function () {
 					gl_FragColor = linearToOutputTexel( vec4( rgbColor, 1.0 ) );\n\
 				}",
 
-			blending: THREE.NoBlending
+            blending: THREE.NoBlending
 
-		} );
+        });
 
-		shaderMaterial.type = 'PMREMGenerator';
+        shaderMaterial.type = 'PMREMGenerator';
 
-		return shaderMaterial;
+        return shaderMaterial;
 
-	}
+    }
 
-	return PMREMGenerator;
+    return PMREMGenerator;
 
-} )();
+})();

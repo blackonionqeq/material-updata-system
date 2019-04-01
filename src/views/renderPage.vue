@@ -3,10 +3,10 @@
     <banner></banner>
     <div class="renderer-page-content">
       <div class="second-top-bar">
-        <div class="go-back" @click="goBack()">
+        <!-- <div class="go-back" @click="goBack()">
           <img src="@/../static/imgs/public/icon_back.png">
           &nbsp;&nbsp;&nbsp;Return
-        </div>
+        </div> -->
         <!-- <div class="separator">|</div> -->
         <div class="shoe-title" v-if="modelInfo">{{ modelInfo.modelNumber }}</div>
         <div class="shoe-tags-container">
@@ -18,7 +18,8 @@
           </div>
         </div>
         <span></span>
-        <div class="save-colors">
+        <!-- <div class="save-colors" style="padding-right: 1em;cursor: pointer;" @click="fake = true">Output rendering</div> -->
+        <div class="save-colors" @click="savePatterns()">
           Save
           <img srcset="@/../static/imgs/renderPage/下拉@2x.png 1x">
         </div>
@@ -31,22 +32,22 @@
     <div class="tips-bar-container" :class="{ hidden: flag === 0 }" @click="close()">
       <div class="model-param-container" :class="{ hidden: flag !== 1 }">
         <div class="model-param" v-if="modelInfo">
-          <div>ModelNumber</div>
+          <div>StyleNumber</div>
           <div>{{ modelInfo.modelNumber }}</div>
-          <div>Series</div>
+          <div>Collection</div>
           <div>{{ modelInfo.series }}</div>
-          <div>Components</div>
-          <div style="overflow: auto;">{{ modelInfo.component.split('/').join(' ') }}</div>
+          <!-- <div>Components</div>
+          <div style="overflow: auto;">{{ modelInfo.component.split('/').join(' ') }}</div> -->
           <div>UpdateTime</div>
-          <div>{{ modelInfo.uploadT }}</div>
+          <div>{{ modelInfo.uploadTime }}</div>
           <div>LastModeified</div>
-          <div>{{ modelInfo.lastT }}</div>
+          <div>{{ modelInfo.lastTime }}</div>
         </div>
       </div>
       <div class="how-to-use-container" :class="{ hidden: flag !== 2 }">
         <!-- <div class="close">X</div> -->
         <div v-for="(eachTip, index) of tips" :key="index">
-          <img style="width: 6em; height: 9em;" :src="eachTip.url">
+          <img :src="eachTip.url">
           <div>
             <b>{{ eachTip.title }}</b>
           </div>
@@ -76,10 +77,15 @@
       </div>
     </div>
     <!-- <div class="previous-op">
-      <button class="big-size" :disabled='historyPointer == null || historyPointer == -1' @click="undo()">←</button>
+        <img class="big-size" srcset="@/../static/imgs/renderPage/undo.png 1x" @click="undo()">
     </div>
     <div class="next-op">
-      <button class="big-size" :disabled='historyPointer == null || historyPointer +1 == historyOperation.length' @click="redo()">→</button>
+        <img class="big-size" srcset="@/../static/imgs/renderPage/redo.png 1x" @click="redo()">
+    </div> -->
+    <!-- <div class="fake" v-if="fake" @click="fake=false"></div>
+    <div class="fake2" v-if="fake" @click="fake=false">
+      <img style="width: 140px; height: 140px;" srcset="@/../static/imgs/renderPage/完成@2x.png 1x">
+      <div>已传输至云渲染平台</div>
     </div> -->
   </div>
 </template>
@@ -104,23 +110,24 @@ export default {
       ],
       tips: [
         {
-          url:'@/../static/imgs/icons/icon_22.png',
+          url:'@/../static/imgs/renderPage/左键.png',
           title: 'Left-click',
           title2: 'Rotate',
         },
         {
-          url: '@/../static/imgs/icons/icon_21.png',
+          url: '@/../static/imgs/renderPage/滑轮.png',
           title: 'Wheel',
-          title2: 'Scale',
+          title2: 'Scale/Zoom',
         },
         {
-          url:'@/../static/imgs/icons/icon_23.png',
+          url:'@/../static/imgs/renderPage/右键.png',
           title: 'Right-click',
           title2: 'Move',
         },
       ],
-      flag: 2,
+      flag: null,
       // historyPointer: null, 
+      fake: false,
     }
   },
   methods: {
@@ -130,11 +137,23 @@ export default {
     close() {
       this.flag = 0
       this.$store.dispatch('resetShowFlag')
+      this.$store.dispatch('triggerHasShown')
     },
     addTag() {
-      let aTag = prompt('请输入标签名：','')
+      let aTag = prompt('Please input a tag name：','')
       if(aTag && aTag != '') {
         this.tags.push(aTag)
+        console.log(this.$route.query.id)
+        console.log(aTag)
+        let anObject = {
+          shoeID: parseInt(this.$route.query.id),
+          tag: aTag
+        }
+        this.$store.dispatch('UpdataTagOfModel', anObject).then(res => {
+          console.log(res)
+        }).catch(err => {
+          console.log(err)
+        })
       }
     },
     undo() {
@@ -151,7 +170,30 @@ export default {
       // 注意pointer+1等于operation的长度时该按钮已不可用
       this.$store.dispatch('redo_or_undo_operation', 2)
       console.log(this.historyPointer)
-    }
+    },
+    savePatterns() {
+      this.$store.dispatch('SetSaveFlag')
+      // let imgData = renderer.domElement.toDataURL("image/jpeg")
+    },
+    arrangeSavingInfo(componentList, colorsAndTilesList) {
+      let tmp = []
+      for(let i = 0; i < componentList.length; i++) {
+        for(let j = 0; j < colorsAndTilesList.length; j++) {
+          if(componentList[i].componentName === colorsAndTilesList[j].componentName) {
+            tmp.push({
+              componentName: componentList[i].componentName,
+              componentID: componentList[i].componentID,
+              materialID: componentList[i].materialID,
+              materialNumber: componentList[i].materialNumber,
+              color: colorsAndTilesList[j].color,
+              tile: colorsAndTilesList[j].tile || '',
+            })
+            break
+          }
+        }
+      }
+      return tmp
+    },
   },
   computed: {
     ...mapGetters([
@@ -162,31 +204,31 @@ export default {
       'goBackFlag',
       'historyOperation',
       'historyPointer',
+      'colorsAndTiles',
+      'currentModelList',
+      'hasShown'
     ]),
-    // historyPointer() {
-    //   get: {
-    //     if(this.historyOperation.length == 0)
-    //       return null
-    //     else
-    //       return this.historyOperation.length - 1
-    //   }
-    //   set: {
-
-    //   }
-    // }
   },
   watch: {
+    colorsAndTiles(newList) {
+      let info = this.arrangeSavingInfo(this.currentModelList, newList)
+      info.shoeID = parseInt(this.$route.query.id)
+      this.$store.dispatch('SaveAModel', info).then(res => {
+        alert("Save successfully.")
+      }).catch(err => {
+        console.log(err)
+      })
+    },
     showFlag(newFlag) {
       this.flag = newFlag
     },
     modelInfo(newInfo) {
-      let newTag = newInfo.tag.split('/')
-      this.tags = newTag
-      // console.log(newTag)
+      // this.modelInfo = newInfo
+      this.tags = newInfo.tags
     },
-    materialInfo(newInfo) {
-      // console.log(newInfo)
-    },
+    // materialInfo(newInfo) {
+    //   // console.log(newInfo)
+    // },
     goBackFlag: function(newVal, oldVal) {
       if(newVal === 0 && oldVal === 1) {
         this.$router.go(-1)
@@ -194,21 +236,66 @@ export default {
     },
     historyOperation(newOp) {
       // console.log(newOp)
+    },
+    hasShown(newFlag) {
+      console.log('hasShown')
     }
   },
+  mounted() {
+    console.log(this.$store.getters.hasShown)
+    if(this.$store.getters.hasShown) {
+      this.flag = 0
+    }
+    else {
+      this.flag = 2
+    }
+  }
 }
 </script>
 
 <style lang="scss" scoped>
+.fake {
+  position: fixed;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 90;
+  background: #444;
+  background-color: rgba(0, 0, 0, 0.6);
+}
+.fake2 {
+  z-index: 91;
+  position: fixed;
+  top: calc(50vh - 190px);
+  left: calc(50vw - 300px);
+  width: 600px;
+  height: 380px;
+  background: #fff;
+  border-radius: 1em;
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content:flex-start;
+  align-items: center;
+  img {
+    margin-top: 3em;
+  }
+  div {
+    font-size: 2em;
+    margin-top: 1em;
+  }
+}
 .previous-op {
   position: absolute;
-  left: 50%;
-  top: 30%;
+  left: 5vw;
+  top: 23vh;
 }
 .next-op {
   position: absolute;
-  left: 55%;
-  top: 30%;
+  left: 69vw;
+  top: 23vh;
+}
+.previous-op, .next-op {
+  cursor: pointer;
 }
 .big-size {
   font-size: 2em;
@@ -249,7 +336,8 @@ export default {
   }
 
   .shoe-title {
-    margin-left: 3.75em;
+    // margin-left: 3.75em;
+    margin-left: 2em;
   }
 
   .shoe-tags-container {
@@ -336,9 +424,10 @@ export default {
   width: 100%;
   height: 100%;
 
-  background-color: #666;
+  // background-color: #666;
 
-  opacity: .8;
+  // opacity: .8;
+  background-color: rgba(0, 0, 0, 0.6);
 
   display: flex;
   justify-content: center;
@@ -360,9 +449,9 @@ export default {
     display: grid;
     grid-template: repeat(2, 2em) 5em repeat(2, 2em) / 8em 15em;
     justify-items: flex-start;
-    > div:nth-of-type(2n) {
-      margin-top: .2em;
-    }
+    // > div:nth-of-type(2n) {
+    //   margin-top: .2em;
+    // }
   }
 }
 .how-to-use-container {
@@ -416,9 +505,9 @@ export default {
       display: grid;
       grid-template: 1.5em 4em repeat(4, 1.5em) / 8em 10em;
       justify-items: flex-start;
-      > div:nth-of-type(2n) {
-        margin-top: .2em;
-      }
+      // > div:nth-of-type(2n) {
+      //   margin-top: .2em;
+      // }
     }
   }
 }

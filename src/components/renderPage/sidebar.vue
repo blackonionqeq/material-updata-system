@@ -4,7 +4,9 @@
       <div :class="{ selectedType: typePointer === index }" v-for="(type, index) of types" :key="index" @click="changeSelector(type.selectorType)">{{ type.name }}</div>
     </nav>
     <div class="object-selector">
-      <component :is="currentSelector"/>
+      <keep-alive>
+        <component :is="currentSelector"/>
+      </keep-alive>
     </div>
   </div>
 </template>
@@ -18,14 +20,12 @@ import materialSelector from '@/components/renderPage/sidebar/materialSelector'
 // let materialSquare = require('@/../static/js/materialSquare')
 
 
-let materialChangeableMap = require('@/../static/js/materialChangeableMap')
-
 export default {
   data() {
     return {
       currentSelector: 'materialSelector',
       types: [
-        { name: 'Models', selectorType: 'modelSquare' },
+        { name: 'Styles', selectorType: 'modelSquare' },
         // { name: '个人模型', selectorType: 'personalModels' },
         { name: 'Materials', selectorType: 'materialSquare' },
         // { name: '个人面料', selectorType: 'personalMaterials' },
@@ -52,10 +52,10 @@ export default {
         }
       }
     },
-    getMaterialInfoByID(ID) { //当改变模型时触发。把选择项调到面料页，并传递该ID的面料信息（信息格式见materialChangeableMap.getChangeableList函数）到子部件materialSelector,以便做进一步的判断
-      let list = materialChangeableMap.getChangeableList(ID)
-      this.changeSelector('materialSquare', list)
-    }
+    // getMaterialInfoByID(ID) { //当改变模型时触发。把选择项调到面料页，并传递该ID的面料信息（信息格式见materialChangeableMap.getChangeableList函数）到子部件materialSelector,以便做进一步的判断
+    //   let list = materialChangeableMap.getChangeableList(ID)
+    //   this.changeSelector('materialSquare', list)
+    // }
   },
   computed: {
     ...mapGetters([
@@ -63,13 +63,13 @@ export default {
     ]),
   },
   watch: {
-    selectedModelID(id) {
-      this.getMaterialInfoByID(id)
-    }
+    // selectedModelID(id) {
+    //   this.getMaterialInfoByID(id)
+    // }
   },
   mounted() {
-
-
+    let tmpObject = document.getElementsByClassName('sidebar-container')[0]
+    tmpObject.style.height = screen.availHeight - 240 - 48 -29
   }
 }
 </script>
@@ -81,14 +81,15 @@ export default {
   // border-width: 4px;
   // border-style: solid;
   border-image: linear-gradient(90deg,rgba(115,212,252,1),rgba(30,149,247,1))0 0 10% 0!important;
-  z-index: 999;
+  // z-index: 999;
 }
 .sidebar-container {
   margin-left: .5em;
+  // box-sizing: border-box;
 
-  width: 500px;
-  min-height: calc(100vh - 12em);
-  max-height: calc(100vh - 12em);
+  width: 33em;
+  min-height: calc(100vh - 240px + 2em);
+  max-height: calc(100vh - 240px + 2em);
   overflow: auto;
 
   background-color: #fff;

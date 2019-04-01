@@ -7,6 +7,7 @@ import globalFlag from './modules/globalFlag'
 import user from './modules/user'
 import modelPage from './modules/models'
 import sidebarRequest from './modules/sidebarRequest'
+import save from './modules/save'
 
 import getters from './getters'
 
@@ -20,6 +21,7 @@ const store = new Vuex.Store({
     user,
     modelPage,
     sidebarRequest,
+    save,
   },
   getters
 })

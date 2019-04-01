@@ -4,6 +4,9 @@
     <div class="modelPage-content">
       <!-- Fixed sidebar which is navigator -->
       <div class="side-navigator-container">
+        <div class="underline-container">
+          <div class="navigator__underline"></div>
+        </div>
         <div class="navigator-item" :class="navigatorItem.class" v-for="(navigatorItem, index) of navigatorContent" :key="index">
           <img :srcset="navigatorItem.srcset" :src="navigatorItem.iconUrl" :alt="navigatorItem.iconUrl">
           <div>{{ navigatorItem.title }}</div>
@@ -11,62 +14,67 @@
       </div>
       <div class="model-type-container">
         <div class="left-arrow">
-          <!-- <img src="../../../static/imgs/public/icon_back.png"> -->
         </div>
         <div class="model-type-item" :class="{ selectedType: modelTypesPointer == index }" v-for="(modelType, index) of modelTypes" :key="index">
           {{ modelType }}
         </div>
         <div class="space"></div>
-        <!-- <button class="update-model">+Update Model</button> -->
         <div class="search-bar">
-          <input placeholder="search">
+          <input id="search" placeholder="search">
           <img srcset="
             @/../static/imgs/modelsPage/搜索@2x.png 1x
-          ">
+          " @click="search()">
         </div>
       </div>
       <div class="model-sequence-container">
         <div class="sequence-item" :class="{ selectedItem: selectedItem === index}" v-for="(sequenceItem, index) of sequenceType" :key="index" @click="sequenceItems(sequenceItem, index)">
           {{ sequenceItem }}
         </div>
-        <div class="sequence-item" @click="addKeyword()">+</div>
-      </div>
-      <div class="model-tiles-area-container">
-        <div class="model-item" v-for="(modelInfo, index) of modelsInfo" :key="index" @click="selectModel(modelInfo.modelID)">
-          <img :src="modelInfo.thumbnailUrl" :alt="modelInfo.thumbnailUrl">
-          <div class="model-item-title">{{ modelInfo.name }} </div>
-          <div class="model-item-tags-container">
-            <div class="model-item-tag" v-for="(modelTag, index) of modelInfo.tags.split('/')" :key="index">
-              {{ modelTag }}
-            </div>
-          </div>
-          <!-- <span></span> -->
-          <div class="model-item-time-info-container">
-            <div class="model-item-time">
-              <img srcset="
-                ../../static/imgs/public/上传@2x.png 1x,
-                "
-               src="@/../static/imgs/icons/icon_14.png">
-              <div>{{ modelInfo.startTime}}</div>
-            </div>
-            <div class="model-item-time">
-              <img srcset="
-                ../../static/imgs/public/修改@2x.png 1x,
-              "
-              src="@/../static/imgs/icons/icon_15.png">
-              <div>{{ modelInfo.modifiedTime}}</div>
-            </div>
-            <div class="spice"></div>
-            <!-- <div class="model-item-tips">tips</div> -->
-            <div class="model-item-tips" @click.stop="showModelInfo(modelInfo.modelID)">
-              <img srcset="
-                ../../static/imgs/public/信息@2x.png 1x,
-              "
-              src="@/../static/imgs/icons/icon_13.png">
-            </div>
-          </div>
+        <div @click="addKeyword()">
+          <img style="width: 3em; height: 2.3em; cursor: pointer;" srcset="@/../static/imgs/modelsPage/添加@2x.png 1x">
         </div>
       </div>
+      <vue-loading v-if="!modelsList" type="spiningDubbles" color="#1E95F7" style="margin-left: 13em;"></vue-loading>
+      <!-- <div class="model-tiles-area-container"> -->
+        <transition-group name="fade" tag="span" class="model-tiles-area-container">
+          <div class="model-item" v-for="(modelInfo) of modelsInfo" :key="modelInfo.name" @click="selectModel(modelInfo.modelID)">
+            <img class="model-item-thumbnail" :src="modelInfo.thumbnailUrl" :alt="modelInfo.thumbnailUrl">
+            <div class="model-item-title">{{ modelInfo.name }} </div>
+            <div class="model-item-tags-container">
+              <!-- <transition-group name="fade" tag="div"> -->
+              <div class="model-item-tag" v-for="(modelTag) of modelInfo.tags" :key="modelTag">
+                {{ modelTag }}
+              </div>
+              <!-- </transition-group> -->
+            </div>
+            <!-- <span></span> -->
+            <div class="model-item-time-info-container">
+              <div class="model-item-time">
+                <img style="width: 1em; height: 1.0625em;" srcset="
+                  ../../static/imgs/public/上传@2x.png 1x,
+                  "
+                src="@/../static/imgs/icons/icon_14.png">
+                <div>{{ modelInfo.startTime}}</div>
+              </div>
+              <div class="model-item-time">
+                <img style="width: 1em; height: 1.0625em;" srcset="
+                  ../../static/imgs/public/修改@2x.png 1x,
+                "
+                src="@/../static/imgs/icons/icon_15.png">
+                <div>{{ modelInfo.modifiedTime}}</div>
+              </div>
+              <div class="spice"></div>
+              <!-- <div class="model-item-tips">tips</div> -->
+              <div class="model-item-tips" @click.stop="showModelInfo(modelInfo.modelID)">
+                <img srcset="
+                  ../../static/imgs/public/信息@2x.png 1x,
+                "
+                src="@/../static/imgs/icons/icon_13.png">
+              </div>
+            </div>
+          </div>
+        </transition-group>
+      <!-- </div> -->
     </div>
     <!-- Hidden default. -->
     <div class="tips-bar-container" :class="{ hidden: flag === 0 }" @click="close()">
@@ -76,12 +84,12 @@
           <div>{{ modelInfo.modelNumber }}</div>
           <div>Series</div>
           <div>{{ modelInfo.series }}</div>
-          <div>Components</div>
-          <div style="overflow: auto;">{{ modelInfo.component.split('/').join(' ') }}</div>
+          <!-- <div>Components</div>
+          <div style="overflow: auto;">{{ modelInfo.component.split('/').join(' ') }}</div> -->
           <div>UpdateTime</div>
-          <div>{{ modelInfo.uploadT }}</div>
+          <div>{{ modelInfo.uploadTime }}</div>
           <div>LastModeified</div>
-          <div>{{ modelInfo.lastT }}</div>
+          <div>{{ modelInfo.lastTime }}</div>
         </div>
       </div>
     </div>
@@ -89,7 +97,6 @@
 </template>
 
 <script>
-const modelSquare = require('@/../static/js/modelSquare')
 import banner from '@/components/public/banner'
 export default {
   components: {
@@ -206,37 +213,51 @@ export default {
         // },
       ],
       selectedItem: 0,
+      modelsList: null,
     }
   },
   mounted() {
-    this.adaptFromFile(modelSquare.models)
-    this.$store.dispatch('GetPrivateModels').then(() => {
-      console.log('done.')
+    if(!this.$store.getters.token) {
+      this.$router.push('/')
+      return
+    }
+    this.$store.dispatch('GetPrivateModels2ModelPage').then(modelsList => {
+      console.log(modelsList)
+      this.adapt2List(modelsList)
+      this.modelsList = modelsList
     }).catch(reject => {
       console.log(reject)
+      alert('The server have some wrong.')
+    })
+    this.$store.dispatch('GetModelsSeriesAndSeasons').then(tags => {
+      let tmp = this.sequenceType[0]
+      tags.unshift(tmp)
+      this.sequenceType = null
+      this.sequenceType = tags
     })
   },
   methods: {
     showModelInfo(id) {
       console.log(id)
       this.modelInfo = null
-      let temp = modelSquare.models.filter(eachModel => eachModel.modelID == id)[0]
+      let temp = this.modelsList.filter(eachModel => eachModel.shoeID == id)[0]
       this.modelInfo = temp
       this.flag = 1
     },
     close() {
       this.flag = 0
     },
-    adaptFromFile(models) {
+    adapt2List(models) {
       let temp = []
       models.forEach(eachModel => {
         let temp2 = {}
-        temp2.thumbnailUrl = eachModel.imgUrl
+        temp2.thumbnailUrl = eachModel.curtailImg
         temp2.name = eachModel.modelNumber
-        temp2.tags = eachModel.tag
-        temp2.startTime = eachModel.uploadT
-        temp2.modifiedTime = eachModel.lastT
-        temp2.modelID = eachModel.modelID
+        temp2.tags = Object.values(eachModel.tags)
+        console.log(typeof eachModel.uploadTime)
+        temp2.startTime = eachModel.uploadTime.substring(2,10).replace(/-/g,'.')
+        temp2.modifiedTime = eachModel.lastTime.substring(2,10).replace(/-/g,'.')
+        temp2.modelID = eachModel.shoeID
         temp.push(temp2)
       })
       this.modelsInfo = temp
@@ -245,15 +266,22 @@ export default {
       let temp = []
       this.selectedItem = index
       if(index == 0) {
-        this.adaptFromFile(modelSquare.models)
+        this.modelsList = null
+        this.$store.dispatch('GetPrivateModels2ModelPage').then(modelsList => {
+          console.log(modelsList)
+          this.adapt2List(modelsList)
+          this.modelsList = modelsList
+        }).catch(reject => {
+          console.log(reject)
+        })
         return
       }
-      modelSquare.models.forEach(eachModel => {
-        if(eachModel.tag.includes(keyWord)) {
+      this.modelsList.forEach(eachModel => {
+        if(eachModel.tags.includes(keyWord)) {
           temp.push(eachModel)
         }
       })
-      this.adaptFromFile(temp)
+      this.adapt2List(temp)
     },
     addKeyword() {
       let newKeyWord = prompt('Please input tag name:', '')
@@ -263,13 +291,34 @@ export default {
     },
     selectModel(modelID) {
       // this.$store.commit('SELECT_A_MODEL', modelID)
-      this.$router.push(`/render?id=${modelID}`)
+      let routeData = this.$router.resolve({ path:`/render?id=${modelID}`})
+      window.open(routeData.href, '_blank')
     },
+    search() {
+      let keyValue = document.getElementById('search').value
+      // console.log(keyValue)
+      this.$store.dispatch('GetModelsBySearch', keyValue).then(res => {
+        console.log(res)
+        this.modelsList = res
+        this.adapt2List(res)
+      }).catch(err => {
+        console.log(err)
+      })
+    }
   }
 }
 </script>
 
 <style lang="scss" scoped>
+.fade-enter-active {
+  transition: opacity 1s;
+}
+.fade-leave-active {
+  transition: opacity .3s;
+}
+.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+  opacity: 0;
+}
 ::-webkit-input-placeholder { /* WebKit browsers */
     color:    #999;
 }
@@ -307,7 +356,7 @@ export default {
       margin-right: 1.625em;
       margin-bottom: 1.625em;
       width: 16.25em;
-      height: 21em;
+      // height: 21em;
 
       background-color: #fff;
 
@@ -316,6 +365,10 @@ export default {
       cursor: pointer;
       > div {
         margin-left: 1em;
+      }
+      .model-item-thumbnail {
+        width: 16.25em;
+        height: 200px;
       }
 
       .model-item-tags-container {
@@ -329,11 +382,13 @@ export default {
         .model-item-tag {
           border: .0625em solid #2ecefe;
           color: #2ecefe;
-          border-radius: .5em;
-          padding: .1em .2em;
+          font-size: .75em;
+          border-radius: .25em;
+          // padding: .1em .2em;
+          padding: .375em;
           margin-right: .375em;
           margin-bottom: .5em;
-          max-height: 1.03em;
+          max-height: 1.17em;
         }
 
         
@@ -344,7 +399,7 @@ export default {
         // line-height: 2em;
       }
       .model-item-tags-container::-webkit-scrollbar {
-        width: .5em;
+        width: .4em;
         background-color: #fff;
       }
       .model-item-tags-container::-webkit-scrollbar-thumb {
@@ -361,19 +416,23 @@ export default {
         display: flex;
         flex-flow: row nowrap;
         margin-bottom: .6em;
-        margin-top: 1em;
+        // margin-top: 1em;
 
         > div {
-          margin-right: 1.25em;
+          margin-right: 1em;
         }
+        
 
         .model-item-time {
           display: flex;
           flex-flow: row nowrap;
+          margin-bottom: .3em;
 
           div {
             margin-left: .5em;
-            margin-top: .2em;
+            // margin-top: .1em;
+            height: 1.5em;
+            line-height: 1.5em;
             font-size: .6em;
             color: #aaa;
           }
@@ -488,7 +547,7 @@ export default {
 
   .model-sequence-container {
     display: flex;
-    flex-flow: row nowrap;
+    flex-flow: row wrap;
 
     margin-top: 1em;
 
@@ -497,6 +556,7 @@ export default {
       line-height: 2.3em;
 
       margin-right: .625em;
+      margin-bottom: 1em;
       padding: 0 1.5em;
 
       background-color: #dbdbdb;
@@ -529,6 +589,19 @@ export default {
   background-color: #fff;
 
   border-radius: 10px;
+  .underline-container {
+    position: relative;
+    .navigator__underline {
+      position: absolute;
+      top: 7em;
+      left: calc(60px - 2.5em);
+      border-image: linear-gradient(90deg,#1E95F7, #73D4FC)0 0 10% 0;
+      border-width: .25em;
+      border-style: solid;
+      height: .25em;
+      width: 4.5em;
+    }
+  }
   .navigator-item {
     margin-top: 2em;
     margin-bottom: 2em;
@@ -543,7 +616,7 @@ export default {
       color: #888;
     }
   }
-  .navigator-item:nth-of-type(1) {
+  .navigator-item:nth-of-type(2) {
     div {
       // width: 4em;
       // margin-left: 1em;
@@ -588,7 +661,7 @@ export default {
     grid-template: repeat(2, 2em) 5em repeat(2, 2em) / 8em 15em;
     justify-items: flex-start;
     > div:nth-of-type(2n) {
-      margin-top: .2em;
+      // margin-top: .2em;
     }
   }
 }

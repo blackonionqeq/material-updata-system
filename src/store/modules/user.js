@@ -1,10 +1,11 @@
-import { getToken, setToken, removeToken } from '@/utils/auth'
+import { getToken, setToken, removeToken, getHasShown, setHasShown } from '@/utils/auth'
 import { loginByUsername, } from '@/api/login'
 
 const user = {
   state: {
     name: '',
-    token: getToken()
+    token: getToken(),
+    hasShown: getHasShown() || false
   },
   mutations: {
     SET_NAME: (state, name) => {
@@ -13,6 +14,9 @@ const user = {
     SET_TOKEN: (state, token) => {
       state.token = token
     },
+    TRIGGER_HASSHOWN: (state) => {
+      state.hasShown = true
+    }
   },
   actions: {
     LoginByUsername({ commit }, userInfo) {
@@ -21,6 +25,7 @@ const user = {
         loginByUsername(username, userInfo.password).then(response => {
           const data = response.data
           if(data.code == 200) {
+            commit('SET_NAME', username)
             commit('SET_TOKEN', data.value)
             setToken(response.data.value)
             resolve()
@@ -31,6 +36,10 @@ const user = {
           reject(error)
         })
       })
+    },
+    triggerHasShown({ commit }) {
+      commit('TRIGGER_HASSHOWN')
+      setHasShown()
     }
   }
 }

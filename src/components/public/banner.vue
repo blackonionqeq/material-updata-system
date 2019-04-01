@@ -1,9 +1,9 @@
 <template>
   <div class="banner">
     <div class="logo-container">
-      <img
+      <img style="width: 178px; height: 40px;"
         srcset="
-          ../../../static/imgs/modelsPage/logo@2x.png 1x,
+          ../../../static/imgs/public/logo.png 1x,
         "
         src="../../../static/imgs/public/top_logo.png">
     </div>
@@ -18,7 +18,7 @@
     <div class="user-info-container">
       <div class="user-grahp-container"></div>
       <div class="user-info-content">
-        <div class="username">AAAAA</div>
+        <div class="username">{{ username }}</div>
         <div class="user-type">Designer</div>
       </div>
       <div class="arrow-container">
@@ -33,8 +33,18 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
+import Cookies from 'js-cookie'
 export default {
-  
+  data() {
+    return {
+      username: ''
+    }
+  },
+  mounted() {
+    console.log
+    this.username = Cookies.get('username')
+  }
 }
 </script>
 

@@ -3,7 +3,7 @@ import store from '@/store'
 import { getToken } from '@/utils/auth'
 
 const service = axios.create({
-  baseURL: 'http://4dshoetech.com/sdtc_show',
+  baseURL: 'http://test.4dshoetech.com/sdtc_show',
   timeout: 6666,
 })
 
@@ -12,6 +12,7 @@ service.interceptors.request.use(
     if(store.getters.token) {
       config.headers['token'] = getToken()
     }
+    console.log(config)
     return config
   },
   error => {

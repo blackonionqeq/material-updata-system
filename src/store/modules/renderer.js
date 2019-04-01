@@ -1,7 +1,8 @@
 import Cookies from 'js-cookie'
 import { stat } from 'fs';
-const modelMap = require('@/../static/js/modelSquareMap')
-const materialList = require('@/../static/js/materialSquare')
+import {
+  getModelsInfoFromBackEnd,
+} from '@/api/renderer'
 
 const renderer = {
   state: {
@@ -10,7 +11,7 @@ const renderer = {
     // The info when wanna change a model
     selectedModelID: 0,
     selectedModel: null,
-    materialList: null,
+    // materialList: null,
     // The info when wanna change a fur
     targetComponent: null,
     targetFurID: null,
@@ -23,24 +24,33 @@ const renderer = {
     tmpOperation: null,
     targetOperation: null,
     closeGUIFlag: 0,
+
+    // change a changeable component
+    componentInfo: null,
+    // change a material
+    materialInfo2: null,
+    // colors and tiles info
+    colorsAndTiles: [],
   },
   mutations: {
     SET_FLAG: (state) => {
       state.flag += 1
     },
     SELECT_A_MODEL: (state, pointer) => {
-      // if(pointer == state.selectedModelID) {
-      //   return
-      // }
       state.selectedModelID = pointer
-      // Cookies.set('selectedModelPointerID', pointer)
-      // console.log(`Write down ${pointer}`)
     },
-    GET_MODEL_INFO: (state, pointer) => {
-      state.selectedModel = modelMap.getModelInfo(pointer)
+    GET_MODEL_INFO: (state, modelInfo) => {
+      // state.selectedModel = modelMap.getModelInfo(pointer)
+      state.selectedModel = modelInfo
     },
-    GET_MATERIALS_INFO: state => {
-      state.materialList = materialList.materials
+    // GET_MATERIAL_INFO: state => {
+    //   // state.materialList = materialList.materials
+    // },
+    RESET_HISTORY_OPERATION: (state) => {
+      state.historyOperation = []
+      state.historyPointer = -1
+      state.tmpOperation = null
+      state.targetOperation = null
     },
     FILL_TARGET_MATERIAL_INFO: (state, {componentName, furID}) => {
       state.targetComponent = componentName
@@ -111,12 +121,21 @@ const renderer = {
       }else {
         return true
       }
-    }
+    },
+    GET_COMPONENTINFO: (state, componentInfo) => {
+      state.componentInfo = componentInfo
+    },
+    GET_MATERIALINFO: (state, materialInfo) => {
+      state.materialInfo2 = materialInfo
+    },
+    SET_COLORSANDTILES: (state, list) => {
+      state.colorsAndTiles = list
+    },
   },
   actions: {
     async getModelInfo({ commit }, pointer) {
       commit('GET_MODEL_INFO', pointer)
-      commit('GET_MATERIALS_INFO')
+      commit('GET_MATERIAL_INFO')
       commit('SELECT_A_MODEL', pointer)
     },
     fillOutTargetMaterial({ commit }, info) {
@@ -144,6 +163,41 @@ const renderer = {
     },
     reset_close_flag({ commit }) {
       commit('RESET_CLOSEGUIFLAG')
+    },
+    reset_historyOperation({ commit }) {
+      commit('RESET_HISTORY_OPERATION')
+    },
+
+    // Get model's info from back-end.
+    GetModelsInfoFromBackEnd({ commit }, id) {
+      return new Promise((resolve, reject) => {
+        getModelsInfoFromBackEnd(id).then(response => {
+          const data = response.data
+          console.log(data)
+          if(data.code == 200) {
+            resolve(data.value)
+            commit('GET_MODEL_INFO', data.value)
+            commit('SELECT_A_MODEL', id)
+          }
+          else
+            reject(data)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    },
+
+    // Get target component to change.
+    GetComponentsInfo({ commit }, components) {
+      commit('GET_COMPONENTINFO', components)
+    },
+
+    // Get target material to change.
+    GetMaterialInfo({ commit }, material) {
+      commit('GET_MATERIALINFO', material)
+    },
+    GetColorsAndTiles({ commit }, list) {
+      commit('SET_COLORSANDTILES', list)
     },
   }
 }
