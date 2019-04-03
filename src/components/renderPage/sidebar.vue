@@ -1,7 +1,12 @@
 <template>
   <div class="sidebar-container">
     <nav class="type-selector">
-      <div :class="{ selectedType: typePointer === index }" v-for="(type, index) of types" :key="index" @click="changeSelector(type.selectorType)">{{ type.name }}</div>
+      <!-- <div class="type-selector-inner"> -->
+        <!-- <div :class="{ selectedType: typePointer === index }" v-for="(type, index) of types" :key="index" @click="changeSelector(type.selectorType)">{{ type.name }}</div> -->
+        <div :class="{ selectedType: typePointer === index }" v-for="(selector, index) of types" :key="index" @click="changeSelector(selector.name)">
+          {{ selector.name }}
+        </div>
+      <!-- </div> -->
     </nav>
     <div class="object-selector">
       <keep-alive>
@@ -15,6 +20,7 @@
 import { mapGetters } from 'vuex'
 import componentSelector from '@/components/renderPage/sidebar/componentSelector'
 import materialSelector from '@/components/renderPage/sidebar/materialSelector'
+import publicSelector from '@/components/renderPage/sidebar/publicSelector'
 
 // let modelSquare = require('@/../static/js/modelSquare')
 // let materialSquare = require('@/../static/js/materialSquare')
@@ -25,28 +31,27 @@ export default {
     return {
       currentSelector: 'materialSelector',
       types: [
-        { name: 'Styles', selectorType: 'modelSquare' },
-        // { name: '个人模型', selectorType: 'personalModels' },
-        { name: 'Materials', selectorType: 'materialSquare' },
-        // { name: '个人面料', selectorType: 'personalMaterials' },
+        { name: 'My Materials', selectorType: 'materialSelector' },
+        { name: '4DTC Materials', selectorType: 'publicSelector' },
       ],
-      typePointer: 1,
+      typePointer: 0,
     }
   },
   components: {
     componentSelector,
-    materialSelector
+    materialSelector,
+    publicSelector
   },
   methods: {
-    changeSelector(type, info) {
+    changeSelector(type) {
       switch(type) {
-        case 'modelSquare': {
-          this.currentSelector = 'componentSelector'
+        case 'My Materials': {
+          this.currentSelector = 'materialSelector'
           this.typePointer = 0
           break
         }
-        case 'materialSquare': {
-          this.currentSelector = 'materialSelector'
+        case '4DTC Materials': {
+          this.currentSelector = 'publicSelector'
           this.typePointer = 1
           break
         }
@@ -85,51 +90,56 @@ export default {
 }
 .sidebar-container {
   margin-left: .5em;
-  // box-sizing: border-box;
 
-  width: 33em;
   min-height: calc(100vh - 240px + 2em);
   max-height: calc(100vh - 240px + 2em);
+  min-width: 27em;
   overflow: auto;
 
   background-color: #fff;
 
   border-radius: 10px;
-  // height: calc(100vh - 15px);
-  // background-color: skyblue;
-}
-.type-selector {
-  display: flex;
-  flex-wrap: nowrap;
-  justify-content: space-around;
+  .type-selector {
+    // position: fixed;
+    width: 21.34em;
+    border-radius: .5em;
+    z-index: 99;
+    background-color: #fff;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
 
-  margin: 0 10px 0 15px;
+    margin: 0 10px 0 15px;
 
-  color: #000;
-  font-size: 1.125em;
-  div {
-    height: 2.5em;
-    line-height: 2.5em;
-    // padding: .5em 3.3em;
-    // flex-grow: 1;
-    // border-bottom: 4px solid skyblue;
-    border-bottom: 4px solid transparent;
+    color: #000;
+    font-size: 1.125em;
+    div {
+      // position: fixed;
+      height: 2.5em;
+      line-height: 2.5em;
+      // padding: .5em 3.3em;
+      // flex-grow: 1;
+      // border-bottom: 4px solid skyblue;
+      border-bottom: 4px solid transparent;
 
-    margin-right: 8px;
-    margin-bottom: 10px;
-    padding: .3em 1em;
+      // margin-right: 8px;
+      // margin-bottom: 10px;
+      margin: 0 0 0 1em;
+      padding: .3em 1em;
 
-    color: #999;
-    
-    cursor: pointer;
+      color: #999;
+      
+      cursor: pointer;
+    }
+    div:nth-of-type(2) {
+    }
   }
-
 }
 
 .object-selector {
   width: 90%;
   
-  margin: auto;
+  margin: 0 auto 0;
   text-align: left;
   
   // border: 1px solid #000;

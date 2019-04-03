@@ -1,16 +1,6 @@
 <template>
-  <div class="componentSelector-container">
-    <!-- <div v-for="(model, index) of selectInfos.models" :key="index" @click="selectModel(model.modelID)">
-      <div class="img-container">
-        <img style="width: auto; height: 60px; background-color: skyblue;" :src="model.imgUrl">
-      </div>
-      <div>{{ model.modelName }}</div>
-    </div> -->
+  <div class="componentSelector-container">>
     <div class="changeable-component-container">
-      <!-- <div>
-        
-        <div class="title">Customized Parts</div>
-      </div> -->
       <div class="title-bar" @click="toggle(0)">
         <img srcset="@/../static/imgs/renderPage/个性定制@2x.png 1x">
         <div>Customizable Parts</div>
@@ -20,24 +10,11 @@
       <vue-loading v-if="showLoadingC" type="spiningDubbles" color="#1E95F7" style="height: 4em;margin-top: 2em;"></vue-loading>
       <transition name="fade">
         <div class="changeable-components" v-if="showCustomized && changeableComponentList">
-          <!-- <div class="changeable-components-item" v-for="(changeableComponent, index) of changeableComponentList" :key="index">
-            <div class="changeable-components-item-title">{{ changeableComponent.name }}</div>
-            <div class="changeable-components-item-list" v-if="changeableComponent">
-              <div class="changeable-components-item-unit" v-for="(eachComponent, index) of changeableComponent.list" :key="index">
-                <img :srcset="eachComponent.imgUrl">
-                <div>{{ eachComponent.partsName }}</div>
-              </div>  
-            </div>  
-          </div> -->
           <component-unit :components="changeableComponentList"></component-unit>
         </div>
       </transition>
-    </div> <!-- changeable-component-container over. -->
+    </div>
     <div class="changeable-models-container">
-      <!-- <div>
-        <img srcset="@/../static/imgs/renderPage/皮鞋@2x.png 1x">
-        <div class="title">Model List</div>
-      </div> -->
       <div class="title-bar" @click="toggle(1)">
         <img srcset="@/../static/imgs/renderPage/皮鞋@2x.png 1x">
         <div>Model List</div>
@@ -59,7 +36,6 @@
             </div>
           </div>
         </transition>
-        <!-- <div class="changeable-models-item-title">Private Models</div> -->
         <div class="private-models-item-title sub-title-bar" @click="toggle(3)">
           <div>Private Models</div>
           <span></span>

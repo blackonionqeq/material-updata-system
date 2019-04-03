@@ -2,6 +2,18 @@
   <div class="materialSelector-container">
     <!-- <materials-from-component style="width: 100%;" v-for="(material, index) of changeableMaterialList" :material="material" :key="index">
     </materials-from-component> -->
+    <!-- <search-bar input_bar_ID="m_search" @getKeyword="getKeyword"></search-bar>
+    <div class="search-result-container">
+      <div v-if="searchData" class="return-icon-container">
+        <img v-if="searchData" class="return-icon__img" srcset="@/../static/imgs/public/close.png 1x" @click="closeSearchData()"/>
+      </div>
+      <vue-loading v-if="searchIsLoading"  type="spiningDubbles" color="#1E95F7" style="margin: .5em auto .5em;"></vue-loading>
+      <transition name="fade">
+        <div v-if="searchData">
+          <materials-from-component :material="searchData"></materials-from-component>
+        </div>
+      </transition>
+    </div> -->
     <div class="collected-materials-container animated pulse">
       <div class="title-bar" @click="toggle(0)">
         <div>Collected Materials</div>
@@ -29,7 +41,7 @@
       </transition>
       <!-- <selected-materials-info> -->
     </div>
-    <div class="public-materials-container">
+    <!-- <div class="public-materials-container">
       <div class="title-bar" @click="toggle(2)">
         <div>Public Materials</div>
         <span></span>
@@ -41,7 +53,7 @@
           <materials-from-component :material="publicMaterialData"></materials-from-component>
         </div>
       </transition>
-    </div>
+    </div> -->
     <div class="private-materials-container">
       <div class="title-bar" @click="toggle(3)">
         <div>Custormer Supplied Proprietary Materials</div>
@@ -65,15 +77,19 @@ import {
 import Vue from 'vue'
 import materialsFromComponent from '@/components/renderPage/sidebar/materialSelector/materialsFromComponent'
 import selectedMaterialAndComponent from '@/components/renderPage/sidebar/materialSelector/selectedMaterialAndComponent'
+import searchBar from '@/components/public/searchBar'
 export default {
   props: ['selectInfos'],
   components: {
     materialsFromComponent,
     selectedMaterialAndComponent,
+    searchBar
   },
   data() {
     return {
       // changeableMaterialList: []
+      searchData: null,
+      searchIsLoading: false,
       collectedShow: false,
       collectedData: null,
       selectedShow: false,
@@ -125,6 +141,27 @@ export default {
         }
       }
     },
+    getKeyword(keyword) {
+      console.log(keyword)
+      if(keyword === '') {
+        this.searchData = null
+        return
+      }
+      this.searchIsLoading = true
+      console.log(this.searchIsLoading)
+      this.$store.dispatch('SearchMaterials', keyword).then(res => {
+        console.log(res)
+        this.searchIsLoading = false
+        if(res.value.length !== 0)
+          this.searchData = res.value
+      }).catch(err => {
+        console.log(err)
+        this.searchIsLoading = false
+      })
+    },
+    closeSearchData() {
+      this.searchData = null
+    }
   },
   computed: {
     ...mapGetters([
@@ -251,9 +288,22 @@ export default {
   display: flex;
   flex-wrap: wrap;
   width: 24em;
+  margin-top: 2em;
 
   > div {
     width: 100%;
+  }
+  .search-result-container {
+    .return-icon-container {
+      position: relative;
+      .return-icon__img {
+        width: 1em;
+        height: 1em;
+        cursor: pointer;
+        position: absolute;
+        right: 1em;
+      }
+    }
   }
 }
 </style>

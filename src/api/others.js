@@ -20,3 +20,14 @@ export function updataTagOfModel(shoeID, tag) {
     }
   })
 }
+
+export function addTagOnMaterial(materialID, tag) {
+  return request({
+    url: '/private/material/addMaterialTag',
+    method: 'post',
+    params: {
+      materialID,
+      tag
+    }
+  })
+}

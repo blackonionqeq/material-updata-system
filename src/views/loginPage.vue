@@ -3,7 +3,7 @@
     <loading :active="isLoading"></loading>
     <div class="login-bg-2">
       <div class="login-board-container">
-        <img src="../../static/imgs/login_logo.png">
+        <img src="@/../static/imgs/login_logo.png">
         <h2>Login</h2>
         <span>Welcome!</span>
       </div>
@@ -16,13 +16,11 @@
           </ul>
           <div class="input-container">
             <label for="username">
-              <!-- <img style="width: 1.5em; height: 1.5em;" src="../../static/imgs/login_icon_1.png"> -->
             </label>
             <input name="username" id="username" placeholder="phone/username">
           </div>
           <div class="input-container">
             <label for="password">
-              <!-- <img style="width: 1.5em; height: 1.5em;" src="../../static/imgs/login_icon_1.png"> -->
             </label>
             <input type="password" name="password" id="password" placeholder="password"  @keyup.enter="login()">
           </div>
@@ -107,7 +105,7 @@ input {
   outline: none;
 }
 .login-page-bg {
-  background-image: url('../../static/imgs/login_bg.png');
+  background-image: url('~@/../static/imgs/login_bg.png');
   // min-width: 1920;
   width: 100%;
   height: 100vh;
@@ -121,7 +119,7 @@ input {
   top: 20vh;
   margin: auto; 
 
-  background-image: url('../../static/imgs/login_bg_2.png');
+  background-image: url('~@/../static/imgs/login_bg_2.png');
   background-repeat: no-repeat;
 
   // login_bg_2.png's scale
@@ -159,7 +157,7 @@ input {
       top: 5vh;
       left: 2em;
 
-      background-image: url('../../static/imgs/login_bg_4.png');
+      background-image: url('~@/../static/imgs/login_bg_4.png');
       background-repeat: no-repeat;
       // opacity: .95;
 
@@ -201,10 +199,10 @@ input {
 
         text-align: left;
         label[for='username'] {
-          background-image: url('../../static/imgs/login_icon_1.png');
+          background-image: url('~@/../static/imgs/login_icon_1.png');
         }
         label[for='password'] {
-          background-image: url('../../static/imgs/login_icon_2.png')
+          background-image: url('~@/../static/imgs/login_icon_2.png')
         }
         // public lable settings
         label {
@@ -258,7 +256,7 @@ input {
         border-radius: 25px;
         border: 0;
 
-        background-image: url('../../static/imgs/icon_date_light.png');
+        background-image: url('~@/../static/imgs/icon_date_light.png');
         background-size: 170% 145%;
         background-position: -100px -10px;
 

@@ -4,7 +4,7 @@
       <div class="canvas-container">
         <div class="component_selected-container">
           <div class="component_selected">
-            {{ selectedObject }}
+            {{ selectedObject || 'Doubleclick to select a component on the model below.' }}
           </div>
         </div>
         <div id="canvas-frame" @dblclick="onClickShoe"></div>
@@ -50,6 +50,7 @@ export default {
       now: null,
       then: Date.now(),
       elapsed: null,
+      outlineMesh2: null,
       // Render pointer
       // pointer: null
       gui: null,
@@ -357,13 +358,14 @@ export default {
         let dirLight = new THREE.DirectionalLight(0xFFFFFF, 0.421);
         dirLight.position.set(57, 133, 80);
         dirLight.castShadow = true;
-        dirLight.shadow.camera.top = 200; 
-        dirLight.shadow.camera.bottom = -200;
-        dirLight.shadow.camera.left = -200;
-        dirLight.shadow.camera.right = 200;
-        dirLight.shadow.camera.far = 1000;
-        dirLight.shadow.bias = - 0.0002;   
-        dirLight.shadow.radius = 9;
+
+        dirLight.shadow.camera.top = 350;
+        dirLight.shadow.camera.bottom = -350;
+        dirLight.shadow.camera.left = -350;
+        dirLight.shadow.camera.right = 350;
+        dirLight.shadow.camera.far = 500;
+        dirLight.shadow.bias = -0.002;
+        dirLight.shadow.radius = 4;
 
         dirLight.shadow.mapSize.width = 4096;
         dirLight.shadow.mapSize.height = 2048;
@@ -375,21 +377,37 @@ export default {
         dirLight.target = lightTarget;
         this.scene.add(dirLight);
 
-        let lightTarget1 = new THREE.Object3D();
-        lightTarget1.position.set(-430, 1000, 230);
-        this.scene.add(lightTarget1);
-        let dirLight1 = new THREE.DirectionalLight(0x919191, 0.15);   //设置颜色和强度
-        dirLight1.position.set(0, -100, 100);
-        dirLight1.target = lightTarget1;   //平行光投射焦点
+        let dirLight1 = new THREE.DirectionalLight(0x919191, 0.65);   //设置颜色和强度
+        dirLight1.position.set(-64, -81, 239);
+        dirLight1.target = lightTarget;
+        dirLight1.castShadow = true;
+
+
+        dirLight1.shadow.camera.top = 200;
+            dirLight1.shadow.camera.bottom = -200;
+            dirLight1.shadow.camera.left = -200;
+            dirLight1.shadow.camera.right = 200;
+            dirLight1.shadow.camera.far = 1000;
+            dirLight1.shadow.bias = - 0.000008;
+            dirLight1.shadow.radius = 2.42;
+            dirLight1.shadow.mapSize.width = dirLight1.shadow.mapSize.height = 4096;
         this.scene.add(dirLight1);
 
-        // let potLight = new THREE.PointLight(0xFFFFFF, 0.10, 110, 0.54);
-        // potLight.position.set(70, 54, 110);
-        // this.scene.add(potLight);
 
-        // potLight = new THREE.PointLight(0xFFFFFF, 0.1,150, 0.65);
-        // potLight.position.set(-80, 38, 114);
-        // this.scene.add(potLight);
+    // let gui = new dat.GUI();
+    // let lgui = gui.addFolder('DirectionalLight');
+
+    // lgui.add(dirLight1.position, 'x', -1000, 1000).step(1);
+    // lgui.add(dirLight1.position, 'y', -1000, 1000).step(1);
+    // lgui.add(dirLight1.position, 'z', -1000, 1000).step(1);
+    // lgui.add(dirLight1, 'intensity', 0, 1).step(0.001)
+    // lgui.add(dirLight1.shadow, 'bias', -0.005, 0.005).step(0.000001);
+    // lgui.add(dirLight1.shadow, 'radius', 0, 10).step(0.01);
+    // lgui.add(dirLight1.shadow.mapSize, 'width', [256, 512, 1024, 2048]).name('shadowW');
+    // lgui.add(dirLight1.shadow.mapSize, 'height',[256, 512, 1024, 2048]).name('shadowH');
+
+
+
       
     },
     initModel(){
@@ -412,12 +430,12 @@ export default {
       this.outlinePass = new THREE.OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), this.scene, this.camera); //outline
       this.composer.addPass(this.outlinePass);
       this.outlinePass.usePatternTexture = false
-      this.outlinePass.edgeStrength = 2.5  
-      this.outlinePass.edgeGlow = 0.6
-      this.outlinePass.edgeThickness = 2.2
-      this.outlinePass.pulsePeriod = 3
-      this.outlinePass.visibleEdgeColor.set(0xffffff); 
-      this.outlinePass.hiddenEdgeColor.set(0x7c7c7c);  
+      this.outlinePass.edgeStrength = 5.4  
+      this.outlinePass.edgeGlow = 0
+      this.outlinePass.edgeThickness = 2.8
+      this.outlinePass.pulsePeriod = 0
+      this.outlinePass.visibleEdgeColor.set(0x012546); 
+      this.outlinePass.hiddenEdgeColor.set(0x00407a);  
       var pixelRatio = this.renderer.getPixelRatio()
 
       //anti-aliasing
@@ -806,20 +824,25 @@ export default {
       if(intersects.length > 0) {
         this.selectedObject = intersects[0].object.name
         console.log(intersects[0].object.name)
-        
+        //this.outlineMesh(intersects[0].object)
+
+        //点击获取部件时更新outline对象的目标列表
+        if (this.outlinePass) {
+          var objectLists = []
+          objectLists.push(intersects[0].object)  //intersects[0].object为点击获取的对象
+          this.outlinePass.selectedObjects = objectLists  //selectedObjects为会显示轮廓的部件
+        }else
         {
+          var objectLists = []
+          this.outlinePass.selectedObjects = objectLists
+
           // if (this.gui != null) {
           //     this.gui.destroy() //清除gui及其监听事件
           //     this.gui = null
           // }
           // this.gui = new dat.GUI(); //新建根UI
 
-          // //点击获取部件时更新outline对象的目标列表
-          // if (this.outlinePass) {
-          //   var objectLists = []
-          //   objectLists.push(intersects[0].object)  //intersects[0].object为点击获取的对象
-          //   this.outlinePass.selectedObjects = objectLists  //selectedObjects为会显示轮廓的部件
-          // }
+          
 
 
           // //----获取UI的domElement改变格式，这里仅做示例---
@@ -949,7 +972,8 @@ export default {
         }
       }
       else {
-          
+          var objectLists = []
+          this.outlinePass.selectedObjects = objectLists
           // this.closeGUI()
 
       }
@@ -997,6 +1021,19 @@ export default {
         })
         this.loadCTM(news[i], tmp)
       }
+    },
+    outlineMesh(target) {
+      if (this.outlineMesh2) {
+          this.scene.remove(this.outlineMesh2);
+          this.group.remove(this.outlineMesh2)
+      }
+      var outlineMaterial2 = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.35 });
+      this.outlineMesh2 = new THREE.Mesh(target.geometry, outlineMaterial2);
+      outlineMaterial2.name = "outline"
+      this.outlineMesh2.position.copy(target.position);
+      this.outlineMesh2.scale.multiplyScalar(1.0015);
+      this.scene.add(this.outlineMesh2)
+      this.group.add(this.outlineMesh2)
     },
     writeDownChangeableComponent(model) {
       let tmp = []
@@ -1143,7 +1180,7 @@ export default {
     },
     materialInfo2(newInfo) {
       if(!this.selectedObject) {
-        alert('Please double click a component.')
+        alert('Please doubleclick a component in model.')
         return
       }
       else {
@@ -1257,12 +1294,15 @@ export default {
   border-radius: 1em;
   .component_selected-container {
     position: relative;
+    text-align: center;
+    width: 100%;
     .component_selected {
       position: absolute;
       color: #999;
       top: 2em;
       left: 50%;
       font-size: 1.5em;
+      transform: translate(-50%, -50%);
     }
   }
 }

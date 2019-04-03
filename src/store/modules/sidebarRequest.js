@@ -8,6 +8,7 @@ import {
   // Models
   getPublicModels,
   getPrivateModels,
+  searchMaterials
 } from '@/api/sidebar'
 import { stat } from 'fs';
 
@@ -132,6 +133,21 @@ const sidebarRequest = {
           // }
           // else
           //   reject(data)
+        }).catch(error => {
+          reject(error)
+        })
+      })
+    },
+    SearchMaterials({}, keyword) {
+      return new Promise((resolve, reject) => {
+        searchMaterials(keyword).then(response => {
+          const data = response.data
+          console.log(response)
+          if(data.code == 200) {
+            resolve(response.data)
+          }
+          else
+            reject(data)
         }).catch(error => {
           reject(error)
         })

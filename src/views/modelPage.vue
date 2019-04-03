@@ -7,7 +7,7 @@
         <div class="underline-container">
           <div class="navigator__underline"></div>
         </div>
-        <div class="navigator-item" :class="navigatorItem.class" v-for="(navigatorItem, index) of navigatorContent" :key="index">
+        <div class="navigator-item" :class="navigatorItem.class" v-for="(navigatorItem, index) of navigatorContent" :key="index" @click="jumpTo(index)">
           <img :srcset="navigatorItem.srcset" :src="navigatorItem.iconUrl" :alt="navigatorItem.iconUrl">
           <div>{{ navigatorItem.title }}</div>
         </div>
@@ -15,7 +15,7 @@
       <div class="model-type-container">
         <div class="left-arrow">
         </div>
-        <div class="model-type-item" :class="{ selectedType: modelTypesPointer == index }" v-for="(modelType, index) of modelTypes" :key="index">
+        <div class="model-type-item" :class="{ selectedType: modelTypesPointer == index }" v-for="(modelType, index) of modelTypes" :key="index" @click="selectChara(index)">
           {{ modelType }}
         </div>
         <div class="space"></div>
@@ -51,14 +51,14 @@
             <div class="model-item-time-info-container">
               <div class="model-item-time">
                 <img style="width: 1em; height: 1.0625em;" srcset="
-                  ../../static/imgs/public/上传@2x.png 1x,
+                  @/../static/imgs/public/上传@2x.png 1x,
                   "
                 src="@/../static/imgs/icons/icon_14.png">
                 <div>{{ modelInfo.startTime}}</div>
               </div>
               <div class="model-item-time">
                 <img style="width: 1em; height: 1.0625em;" srcset="
-                  ../../static/imgs/public/修改@2x.png 1x,
+                  @/../static/imgs/public/修改@2x.png 1x,
                 "
                 src="@/../static/imgs/icons/icon_15.png">
                 <div>{{ modelInfo.modifiedTime}}</div>
@@ -67,7 +67,7 @@
               <!-- <div class="model-item-tips">tips</div> -->
               <div class="model-item-tips" @click.stop="showModelInfo(modelInfo.modelID)">
                 <img srcset="
-                  ../../static/imgs/public/信息@2x.png 1x,
+                  @/../static/imgs/public/信息@2x.png 1x,
                 "
                 src="@/../static/imgs/icons/icon_13.png">
               </div>
@@ -78,29 +78,32 @@
     </div>
     <!-- Hidden default. -->
     <div class="tips-bar-container" :class="{ hidden: flag === 0 }" @click="close()">
-      <div class="model-param-container" :class="{ hidden: flag !== 1 }">
+      <!-- <div class="model-param-container" :class="{ hidden: flag !== 1 }">
         <div class="model-param" v-if="modelInfo">
           <div>ModelNumber</div>
           <div>{{ modelInfo.modelNumber }}</div>
           <div>Series</div>
           <div>{{ modelInfo.series }}</div>
-          <!-- <div>Components</div>
+          <div>Components</div>
           <div style="overflow: auto;">{{ modelInfo.component.split('/').join(' ') }}</div> -->
-          <div>UpdateTime</div>
+          <!-- <div>UpdateTime</div>
           <div>{{ modelInfo.uploadTime }}</div>
           <div>LastModeified</div>
           <div>{{ modelInfo.lastTime }}</div>
         </div>
-      </div>
+      </div> -->
+      <model-information :modelInfo="modelInfo" :class="{ hidden: flag !== 1 }"></model-information>
     </div>
   </div>
 </template>
 
 <script>
 import banner from '@/components/public/banner'
+import modelInformation from '@/components/public/modelInformation'
 export default {
   components: {
-    banner
+    banner,
+    modelInformation
   },
   data() {
     return {
@@ -108,31 +111,33 @@ export default {
       modelInfo: null,
       navigatorContent: [
         {
-          iconUrl: '../../../static/imgs/public/meau_icon_2_light.png',
-          title: 'My model',
+          iconUrl: '~@/../static/imgs/public/meau_icon_2_light.png',
+          title: 'My Styles',
           class: 'my-model-class',
-          srcset: '../../static/imgs/public/皮鞋_1.png 1x',
+          srcset: '~@/../static/imgs/public/皮鞋_1.png 1x',
         },{
-          iconUrl: '../../../static/imgs/public/meau_icon_3_gray.png',
+          iconUrl: '~@/../static/imgs/public/meau_icon_3_gray.png',
           title: 'My materials',
           class: 'my-material-class',
-          srcset: '../../static/imgs/public/材质替换_2.png 1x',
+          srcset: '~@/../static/imgs/public/材质替换_2.png 1x',
         },{
-          iconUrl: '../../../static/imgs/public/meau_icon_4_gray.png',
+          iconUrl: '~@/../static/imgs/public/meau_icon_4_gray.png',
           title: 'Order list',
           class: 'my-list-class',
-          srcset: '../../static/imgs/public/我的订单_2.png 1x',
+          srcset: '~@/../static/imgs/public/我的订单_2.png 1x',
         },{
-          iconUrl: '../../../static/imgs/public/meau_icon_5_gray.png',
+          iconUrl: '~@/../static/imgs/public/meau_icon_5_gray.png',
           title: 'Settings',
           class: 'my-setting-class',
-          srcset: '../../static/imgs/public/设置_2.png 1x',
+          srcset: '~@/../static/imgs/public/设置_2.png 1x',
         },
       ],
       modelTypes: [
-        'All Models',
-        'confirmed',
-        'unconfirmed'
+        'All Styles',
+        'Designer A',
+        'Designer B',
+        'Factory A',
+        'Factory B'
       ],
       modelTypesPointer: 0,
       sequenceType: [
@@ -237,6 +242,16 @@ export default {
     })
   },
   methods: {
+    jumpTo(index) {
+      if(index !== 0) {
+        alert('This page hasn\'t been activated yet.')
+      }
+    },
+    selectChara(index) {
+      if(index !== 0) {
+        alert('This function hasn\'t been activated yet.')
+      }
+    },
     showModelInfo(id) {
       console.log(id)
       this.modelInfo = null
@@ -336,6 +351,7 @@ export default {
 }
 .modelPage-container {
   background-color: #f5f5f5;
+  min-height: 97vh;
 }
 .modelPage-content {
   display: flex;
@@ -530,7 +546,7 @@ export default {
 
     .update-model {
       margin-right: 4em;
-      background-image: url('../../static/imgs/icon_date_light.png');
+      background-image: url('~@/../static/imgs/icon_date_light.png');
       background-size: 10.5em 4em;
       background-position: 8.5em -1em;
 
@@ -636,9 +652,10 @@ export default {
   width: 100%;
   height: 100%;
 
-  background-color: #666;
+  // background-color: #666;
 
-  opacity: .8;
+  // opacity: .8;
+  background-color: rgba(0, 0, 0, .6);
 
   display: flex;
   justify-content: center;

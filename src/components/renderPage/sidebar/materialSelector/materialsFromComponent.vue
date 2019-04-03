@@ -8,8 +8,11 @@
     <!-- <div class="materials-content" :class="{ hidden: openFlag === 0 }"> -->
     <div class="materials-content">
       <div v-for="(eachMaterial, index) of material" :key="index" @click="changeFur(eachMaterial)">
-        <div class="tipIcon" style="position: relative;" @click.stop="console.log(`click ${index}'s info.`)">
+        <div class="tipIcon" style="position: relative;" @click.stop="sendShowFlag(eachMaterial)">
           <img style="position: absolute; right: .5em; top: 1.25em;" src="@/../static/imgs/icons/icon_13.png">
+        </div>
+        <div class="price-tip-container">
+          <div class="price-tip">${{ eachMaterial.price || 'UNDEFINED' }} </div>
         </div>
         <img :src='eachMaterial.curtailImg' :alt="eachMaterial.curtailImg">
         <div class="material-info">{{ eachMaterial.materialNumber }}</div>
@@ -40,10 +43,11 @@ export default {
       // let type = 'fur'
       // this.$store.dispatch('pushOperation', {componentName, furID, type})
     },
-    sendShowFlag(material) {
-      let furID = material.furID
-      let furImg = material.furImg
-      this.$store.dispatch('setMaterialInfo', {furID, furImg})
+    sendShowFlag(materialInfo) {
+      console.log(materialInfo)
+      // let furID = material.furID
+      // let furImg = material.furImg
+      this.$store.dispatch('setMaterialInfo', materialInfo)
       this.$store.dispatch('setShowFlag', 3 )
     }
   },
@@ -91,6 +95,16 @@ export default {
 .materials-content {
   display: flex;
   flex-wrap: wrap;
+  .price-tip-container {
+    position: relative;
+    .price-tip {
+      position: absolute;
+      right: 1em;
+      top: 13em;
+      font-size: .75em;
+      color: #999;
+    }
+  }
 
   > div {
     margin-right: .8em;

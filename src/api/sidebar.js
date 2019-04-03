@@ -65,3 +65,13 @@ export function saveAModel(list) {
     }
   })
 }
+
+export function searchMaterials(keyWord) {
+  return request({
+    url: '/private/material/selectMaterial',
+    method: 'get',
+    params: {
+      keyWord
+    }
+  })
+}

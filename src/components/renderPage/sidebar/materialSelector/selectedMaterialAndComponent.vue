@@ -8,9 +8,9 @@
     <!-- <div class="materials-content" :class="{ hidden: openFlag === 0 }"> -->
     <div class="selected-materials-content">
       <div v-for="(eachMaterial, index) of selectedMaterials" :key="index">
-        <div class="tipIcon" style="position: relative;">
-          <img style="position: absolute; right: .5em; top: 1.25em;" src="@/../static/imgs/icons/icon_13.png">
-        </div>
+        <!-- <div class="tipIcon" style="position: relative;">
+          <img style="position: absolute; right: .5em; top: 1.25em;" src="@/../static/imgs/icons/icon_13.png" @click="sendShowFlag(eachMaterial)">
+        </div> -->
         <img :src='eachMaterial.materialImg' :alt="eachMaterial.materialImg">
         <div class="selected-component-info">{{ eachMaterial.componentName }}</div>
         <div class="selected-material-info">{{ eachMaterial.materialNumber }}</div>
@@ -24,6 +24,15 @@ export default {
   props: {
     selectedMaterials: Array,
   },
+  methods: {
+    sendShowFlag(materialInfo) {
+      console.log(materialInfo)
+      // let furID = material.furID
+      // let furImg = material.furImg
+      // this.$store.dispatch('setMaterialInfo', materialInfo)
+      // this.$store.dispatch('setShowFlag', 3 )
+    }
+  }
 }
 </script>
 

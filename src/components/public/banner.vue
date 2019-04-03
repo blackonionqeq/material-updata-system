@@ -3,17 +3,17 @@
     <div class="logo-container">
       <img style="width: 178px; height: 40px;"
         srcset="
-          ../../../static/imgs/public/logo.png 1x,
+          @/../static/imgs/public/logo.png 1x,
         "
-        src="../../../static/imgs/public/top_logo.png">
+        src="@/../static/imgs/public/top_logo.png">
     </div>
     <div class="space"></div>
     <div class="notice-container">
       <img 
         srcset="
-          ../../../static/imgs/modelsPage/消息@2x.png 1x,
+          @/../static/imgs/modelsPage/消息@2x.png 1x,
         "
-      src="../../../static/imgs/public/top_icon_notice.png">
+      src="@/../static/imgs/public/top_icon_notice.png">
     </div>
     <div class="user-info-container">
       <div class="user-grahp-container"></div>
@@ -24,9 +24,9 @@
       <div class="arrow-container">
         <img 
           srcset="
-            ../../../static/imgs/modelsPage/下拉-圆@2x.png 1x,
+            @/../static/imgs/modelsPage/下拉-圆@2x.png 1x,
           "
-        src="../../../static/imgs/public/top_icon_up.png">
+        src="@/../static/imgs/public/top_icon_up.png">
       </div>
     </div>
   </div>

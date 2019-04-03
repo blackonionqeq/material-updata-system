@@ -3,8 +3,8 @@ import store from '@/store'
 import { getToken } from '@/utils/auth'
 
 const service = axios.create({
-  baseURL: 'http://test.4dshoetech.com/sdtc_show',
-  timeout: 6666,
+  baseURL: 'http://show.4dshoetech.com/sdtc_show',
+  // timeout: 6666,
 })
 
 service.interceptors.request.use(

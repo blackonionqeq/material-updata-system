@@ -2,6 +2,7 @@
 // const materialsInfo = require('@/../static/js/materialDetail')
 import {
   getInfoOfAModel,
+  addTagOnMaterial
 } from '@/api/others'
 
 const tipsMiddleware = {
@@ -13,7 +14,7 @@ const tipsMiddleware = {
     tagsInfo: null,
     // The info which show material's param.
     materialInfo: null,
-    materialImgUrl: null,
+    // materialImgUrl: null,
     // The info to let renderer run the function of save patterns.
     saveFlag: false,
   },
@@ -30,8 +31,9 @@ const tipsMiddleware = {
       state.tagsInfo = tagsInfo
       console.log(state.tagsInfo)
     },
-    SET_MATERIALINFO: (state, materialID) => {
-      state.materialInfo = materialsInfo.selectMaterialInfo(materialID)
+    SET_MATERIALINFO: (state, materialInfo) => {
+      // state.materialInfo = materialsInfo.selectMaterialInfo(materialID)
+      state.materialInfo = materialInfo
     },
     SET_MATERIALIMGURL: (state, imgUrl) => {
       state.materialImgUrl = imgUrl
@@ -55,8 +57,8 @@ const tipsMiddleware = {
     },
     setMaterialInfo({ commit }, newInfo) {
       console.log(newInfo)
-      commit('SET_MATERIALINFO', newInfo.furID)
-      commit('SET_MATERIALIMGURL', newInfo.furImg)
+      commit('SET_MATERIALINFO', newInfo)
+      // commit('SET_MATERIALIMGURL', newInfo.furImg)
     },
     GetInfoOfAModel({ commit }, shoeID) {
       return new Promise((resolve, reject) => {
@@ -81,6 +83,22 @@ const tipsMiddleware = {
     ResetSaveFlag({ commit }) {
       commit('RESET_SAVEFLAG')
     },
+    AddTagOnMaterial({}, {materialID, tag}) {
+      return new Promise((resolve, reject) => {
+        addTagOnMaterial(materialID, tag).then(res => {
+          const data = res.data
+          console.log(data)
+          if(data.code == 200) {
+            resolve(data.value)
+            // commit('SET_TAGSINFO', data.value)
+          }
+          else
+            reject(data)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    }
   }
 }
 

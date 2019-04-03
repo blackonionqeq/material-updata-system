@@ -30,20 +30,9 @@
       </div>
     </div>
     <div class="tips-bar-container" :class="{ hidden: flag === 0 }" @click="close()">
-      <div class="model-param-container" :class="{ hidden: flag !== 1 }">
-        <div class="model-param" v-if="modelInfo">
-          <div>StyleNumber</div>
-          <div>{{ modelInfo.modelNumber }}</div>
-          <div>Collection</div>
-          <div>{{ modelInfo.series }}</div>
-          <!-- <div>Components</div>
-          <div style="overflow: auto;">{{ modelInfo.component.split('/').join(' ') }}</div> -->
-          <div>UpdateTime</div>
-          <div>{{ modelInfo.uploadTime }}</div>
-          <div>LastModeified</div>
-          <div>{{ modelInfo.lastTime }}</div>
-        </div>
-      </div>
+      <!-- <div class="model-param-container" :class="{ hidden: flag !== 1 }"> -->
+        <model-information :modelInfo="modelInfo" :class="{ hidden: flag !== 1 }"></model-information>
+      <!-- </div> -->
       <div class="how-to-use-container" :class="{ hidden: flag !== 2 }">
         <!-- <div class="close">X</div> -->
         <div v-for="(eachTip, index) of tips" :key="index">
@@ -57,23 +46,7 @@
         </div>
       </div>
       <div class="material-param-container" :class="{ hidden: flag !== 3 }">
-        <div class="material-param" v-if="materialInfo">
-          <img style="width: 150px; height: 150px; margin-right: 1em;" :src="materialImgUrl">
-          <div class="material-param-content">
-            <div>MaterialNumber</div>
-            <div>{{ materialInfo.materialNumber }}</div>
-            <div>Tags</div>
-            <div style="overflow: auto;">{{ materialInfo.tag }}</div>
-            <div>Supplier</div>
-            <div>{{ materialInfo.supplier }}</div>
-            <div>SupplierID</div>
-            <div>{{ materialInfo.supplierID }}</div>
-            <div>Price</div>
-            <div>{{ materialInfo.prices }}</div>
-            <div>UpdateTime</div>
-            <div>{{ materialInfo.loadT }}</div>
-          </div>
-        </div>
+        <material-information :materialInfo="materialInfo"></material-information>
       </div>
     </div>
     <!-- <div class="previous-op">
@@ -97,12 +70,16 @@ import {
 import banner from '@/components/public/banner'
 import sidebar from '@/components/renderPage/sidebar'
 import renderer from '@/components/renderPage/renderer'
+import materialInformation from '@/components/public/materialInformation'
+import modelInformation from '@/components/public/modelInformation'
 
 export default {
   components: {
     banner,
     sidebar,
-    renderer
+    renderer,
+    materialInformation,
+    modelInformation
   },
   data() {
     return {
@@ -200,7 +177,7 @@ export default {
       'showFlag',
       'modelInfo',
       'materialInfo',
-      'materialImgUrl',
+      // 'materialImgUrl',
       'goBackFlag',
       'historyOperation',
       'historyPointer',
@@ -226,9 +203,9 @@ export default {
       // this.modelInfo = newInfo
       this.tags = newInfo.tags
     },
-    // materialInfo(newInfo) {
-    //   // console.log(newInfo)
-    // },
+    materialInfo(newInfo) {
+      console.log(newInfo)
+    },
     goBackFlag: function(newVal, oldVal) {
       if(newVal === 0 && oldVal === 1) {
         this.$router.go(-1)
@@ -382,7 +359,6 @@ export default {
     background:linear-gradient(45deg,rgba(115,212,252,1),rgba(30,149,247,1));
     line-height: 2em;
     padding: 0 0 0 1em;
-    // background-image: url('../../static/imgs/icon_date_light.png');
     // background-size: 10em 4em;
     // background-position: 8.5em -1em;
 
