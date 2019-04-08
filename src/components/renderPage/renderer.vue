@@ -304,7 +304,7 @@ export default {
           uniforms: uniforms,
           vertexShader: myPhongVertex,
           fragmentShader: myPhongFragment,
-          side: THREE.FrontSide,
+          //side: THREE.FrontSide,
           //name: "TriPhong",
       });
       return material;
@@ -326,6 +326,8 @@ export default {
         renderer.setClearColor(0xFFFFFF, 1.0);
 
         renderer.shadowMap.enabled = true;
+        //renderer.gammaInput = true;
+        //renderer.gammaOutput = true;
 
         let container = document.getElementById('canvas-frame');
         container.appendChild(renderer.domElement);
@@ -390,21 +392,31 @@ export default {
             dirLight1.shadow.camera.far = 1000;
             dirLight1.shadow.bias = - 0.000008;
             dirLight1.shadow.radius = 2.42;
-            dirLight1.shadow.mapSize.width = dirLight1.shadow.mapSize.height = 4096;
+            dirLight1.shadow.mapSize.width = 4096;
+            dirLight1.shadow.mapSize.height = 4096;
         this.scene.add(dirLight1);
 
 
-    // let gui = new dat.GUI();
-    // let lgui = gui.addFolder('DirectionalLight');
+     /*let gui = new dat.GUI();
+     let dGui = gui.addFolder('DirectionalLight');
+     dGui.add(dirLight.position, 'x', -1000, 1000).step(1);
+     dGui.add(dirLight.position, 'y', -1000, 1000).step(1);
+     dGui.add(dirLight.position, 'z', -1000, 1000).step(1);
+     dGui.add(dirLight, 'intensity', 0, 1).step(0.001)
+     dGui.add(dirLight.shadow, 'bias', -0.005, 0.005).step(0.000001);
+     dGui.add(dirLight.shadow, 'radius', -10, 10).step(0.01);
+     dGui.add(dirLight.shadow.mapSize, 'width', [256, 512, 1024, 2048]).name('shadowW');
+     dGui.add(dirLight.shadow.mapSize, 'height',[256, 512, 1024, 2048]).name('shadowH');
 
-    // lgui.add(dirLight1.position, 'x', -1000, 1000).step(1);
-    // lgui.add(dirLight1.position, 'y', -1000, 1000).step(1);
-    // lgui.add(dirLight1.position, 'z', -1000, 1000).step(1);
-    // lgui.add(dirLight1, 'intensity', 0, 1).step(0.001)
-    // lgui.add(dirLight1.shadow, 'bias', -0.005, 0.005).step(0.000001);
-    // lgui.add(dirLight1.shadow, 'radius', 0, 10).step(0.01);
-    // lgui.add(dirLight1.shadow.mapSize, 'width', [256, 512, 1024, 2048]).name('shadowW');
-    // lgui.add(dirLight1.shadow.mapSize, 'height',[256, 512, 1024, 2048]).name('shadowH');
+     let lgui = gui.addFolder('DirectionalLight1');
+     lgui.add(dirLight1.position, 'x', -1000, 1000).step(1);
+     lgui.add(dirLight1.position, 'y', -1000, 1000).step(1);
+     lgui.add(dirLight1.position, 'z', -1000, 1000).step(1);
+     lgui.add(dirLight1, 'intensity', 0, 1).step(0.001)
+     lgui.add(dirLight1.shadow, 'bias', -0.005, 0.005).step(0.000001);
+     lgui.add(dirLight1.shadow, 'radius', -10, 10).step(0.01);
+     lgui.add(dirLight1.shadow.mapSize, 'width', [256, 512, 1024, 2048]).name('shadowW');
+     lgui.add(dirLight1.shadow.mapSize, 'height',[256, 512, 1024, 2048]).name('shadowH');*/
 
 
 
@@ -498,12 +510,17 @@ export default {
         texture.updateMatrix();
         return texture
     },
+
     onChangeFur(componentName, materialInput){
       this.closeGUI()
+
+      //if(materialInput.opacity != 'undefined'){
+      //  material.transparent = true;
+      //}
+
       if (materialInput.materialType == "basic") {
         var material = new THREE.MeshBasicMaterial({
           color: materialInput.color,
-          transparent: materialInput.transparent,
           opacity: materialInput.opacity
         })
       }
@@ -511,7 +528,6 @@ export default {
         var material = new THREE.MeshLambertMaterial({
           color: materialInput.color,
           emissive: materialInput.emissiveColor,
-          transparent: materialInput.transparent,
           opacity: materialInput.opacity
         })
       }
@@ -521,9 +537,9 @@ export default {
           emissive: materialInput.emissiveColor,
           specular: materialInput.specularColor,
           shininess: materialInput.shininess,
-          transparent: materialInput.transparent,
           opacity: materialInput.opacity,
-          side: THREE.FrontSide
+          //side: THREE.DoubleSide,
+          //shadowSide: THREE.FrontSide
         })
       }
       if (materialInput.materialType == "standard") {
@@ -533,10 +549,14 @@ export default {
             metalness: materialInput.metalness,
             roughness: materialInput.roughness,
             opacity: materialInput.opacity,
-            transparent: materialInput.transparent,
             premultipliedAlpha: materialInput.premultipliedAlpha,
-            side: THREE.FrontSide
+            //side: THREE.DoubleSide,
+            //shadowSide: THREE.BackSide
         })
+        if(materialInput.opacity != undefined){
+          material.transparent = true;
+          material.depthWrite = false;
+        }
       }
       if (materialInput.materialType == "triPhong") {
         var material = new this.TriPhongMaterial()
@@ -544,6 +564,7 @@ export default {
       let that = this
       //load map
       if (materialInput.materialType != "triPhong") {
+        if (materialInput.tileNum == undefined) materialInput.tileNum = 1;
         if (materialInput.diffuseMap != undefined) {
             var texture1 = this.loadTexture(materialInput.diffuseMap, materialInput.tileNum)
             material.map = texture1
@@ -562,8 +583,7 @@ export default {
                 texture4.mapping = THREE.SphericalReflectionMapping;
                 material.envMap = texture4
             } else {
-              
-                var prefix = "https://sdtc-show.oss-cn-shenzhen.aliyuncs.com/fur/cubeMap/", postfix = ".hdr"
+                var prefix = "https://sdtc-show.oss-cn-shenzhen.aliyuncs.com/fur/cubeMap/"+ (materialInput.envMap.split('/'))[3] + '/', postfix = ".hdr"
                 var hdrUrls = [
                     prefix + 'px' + postfix, prefix + 'nx' + postfix,
                     prefix + 'py' + postfix, prefix + 'ny' + postfix,
@@ -586,9 +606,12 @@ export default {
                     pmremCubeUVPacker.dispose();
                 });
             }
-          }
         }
-      else {
+        if (materialInput.alphaMap != 'undefined') {
+            var texture6 = this.loadTexture(materialInput.alphaMap, materialInput.tileNum)
+            material.alphaMap = texture6;
+        }
+      }else {
         var tex
         if (materialInput.diffuseMap != undefined || materialInput.specularMap != undefined || materialInput.normalMap != undefined || materialInput.displacementMap != undefined) {
             if (materialInput.tileNum == undefined) materialInput.tileNum = 1
@@ -660,6 +683,9 @@ export default {
         material.uniforms.shadowSide = THREE.DoubleSide;
         material.extensions.derivatives = true;
       }
+
+      material.side = THREE.DoubleSide;
+      material.shadowSide = THREE.BackSide;
       var object = this.scene.getObjectByName(componentName)
       material.name = materialInput.furID + '/' + materialInput.materialType
       if (object) {
